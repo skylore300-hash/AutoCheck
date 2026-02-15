@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoCheck - Gestion des Signalements</title>
+    <link href="../output.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- En-tête -->
+    <header class="bg-gray-800 shadow-lg">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button onclick="autoCheck.goBack()" class="text-gray-400 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <h1 class="text-2xl font-bold">🚨 Gestion des Signalements</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Nouveau signalement -->
+                    <button onclick="showNewReportModal()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-all flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                        </svg>
+                        Nouveau Signalement
+                    </button>
+                    <!-- Export -->
+                    <button onclick="exportReports()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-80 bg-gray-800 p-6">
+            <!-- Statistiques -->
+            <div class="mb-6">
+                <h2 class="text-xl font-bold mb-4">📊 Statistiques</h2>
+                <div class="space-y-4">
+                    <div class="bg-red-600 rounded-xl p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-red-100 text-sm">Signalements Actifs</p>
+                                <p class="text-2xl font-bold" id="activeReports">12</p>
+                            </div>
+                            <svg class="w-8 h-8 text-red-200" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-600 rounded-xl p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-yellow-100 text-sm">En Attente</p>
+                                <p class="text-2xl font-bold" id="pendingReports">8</p>
+                            </div>
+                            <svg class="w-8 h-8 text-yellow-200" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="bg-green-600 rounded-xl p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-green-100 text-sm">Résolus</p>
+                                <p class="text-2xl font-bold" id="resolvedReports">45</p>
+                            </div>
+                            <svg class="w-8 h-8 text-green-200" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtres -->
+            <div class="mb-6">
+                <h2 class="text-xl font-bold mb-4">🔍 Filtres</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Type de signalement</label>
+                        <select id="typeFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                            <option value="all">Tous les types</option>
+                            <option value="vol">Vol de véhicule</option>
+                            <option value="accident">Accident</option>
+                            <option value="infraction">Infraction</option>
+                            <option value="technique">Problème technique</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Statut</label>
+                        <select id="statusFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                            <option value="all">Tous les statuts</option>
+                            <option value="nouveau">Nouveau</option>
+                            <option value="en-cours">En cours</option>
+                            <option value="attente">En attente</option>
+                            <option value="resolu">Résolu</option>
+                            <option value="ferme">Fermé</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Priorité</label>
+                        <select id="priorityFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                            <option value="all">Toutes les priorités</option>
+                            <option value="critique">Critique</option>
+                            <option value="haute">Haute</option>
+                            <option value="normale">Normale</option>
+                            <option value="basse">Basse</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Période</label>
+                        <select id="periodFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                            <option value="all">Toutes les périodes</option>
+                            <option value="today">Aujourd'hui</option>
+                            <option value="week">Cette semaine</option>
+                            <option value="month">Ce mois-ci</option>
+                        </select>
+                    </div>
+
+                    <button onclick="resetFilters()" class="w-full bg-gray-600 hover:bg-gray-500 py-2 px-4 rounded-lg transition-all">
+                        Réinitialiser
+                    </button>
+                </div>
+            </div>
+
+            <!-- Actions rapides -->
+            <div>
+                <h2 class="text-xl font-bold mb-4">⚡ Actions Rapides</h2>
+                <div class="space-y-2">
+                    <button onclick="showBulkActionsModal()" class="w-full bg-blue-600 hover:bg-blue-700 py-2 px-4 rounded-lg transition-all text-left">
+                        📋 Actions groupées
+                    </button>
+                    <button onclick="generateReport()" class="w-full bg-purple-600 hover:bg-purple-700 py-2 px-4 rounded-lg transition-all text-left">
+                        📊 Générer rapport
+                    </button>
+                    <button onclick="showSettingsModal()" class="w-full bg-gray-600 hover:bg-gray-500 py-2 px-4 rounded-lg transition-all text-left">
+                        ⚙️ Paramètres
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenu principal -->
+        <main class="flex-1 p-6">
+            <!-- Barre de recherche -->
+            <div class="mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="flex-1 relative">
+                        <input type="text" id="searchInput" placeholder="Rechercher par plaque, référence, description..." 
+                               class="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white"
+                               oninput="applyFilters()">
+                        <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <select id="sortOrder" class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                        <option value="recent">Plus récents</option>
+                        <option value="oldest">Plus anciens</option>
+                        <option value="priority">Par priorité</option>
+                        <option value="status">Par statut</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Liste des signalements -->
+            <div class="bg-gray-800 rounded-xl shadow-lg">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold">Signalements</h2>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-400" id="reportCount">0 signalements</span>
+                            <button onclick="refreshReports()" class="text-gray-400 hover:text-white transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tableau des signalements -->
+                    <div id="reportsTable" class="overflow-x-auto">
+                        <!-- Chargé dynamiquement -->
+                    </div>
+
+                    <!-- État vide -->
+                    <div id="emptyState" class="text-center py-12" style="display: none;">
+                        <svg class="w-16 h-16 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-400 mb-2">Aucun signalement trouvé</h3>
+                        <p class="text-gray-500">Aucun résultat ne correspond aux critères.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal nouveau signalement -->
+    <div id="newReportModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold">🚨 Nouveau Signalement</h3>
+                        <button onclick="closeNewReportModal()" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <form id="newReportForm" class="space-y-6">
+                        <!-- Informations de base -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Type de signalement *</label>
+                                <select id="newReportType" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" required>
+                                    <option value="">Sélectionner le type</option>
+                                    <option value="vol">Vol de véhicule</option>
+                                    <option value="accident">Accident</option>
+                                    <option value="infraction">Infraction</option>
+                                    <option value="technique">Problème technique</option>
+                                    <option value="autre">Autre</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Priorité *</label>
+                                <select id="newReportPriority" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" required>
+                                    <option value="">Sélectionner la priorité</option>
+                                    <option value="critique">🔴 Critique</option>
+                                    <option value="haute">🟡 Haute</option>
+                                    <option value="normale">🟢 Normale</option>
+                                    <option value="basse">🔵 Basse</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Informations véhicule -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Plaque d'immatriculation</label>
+                                <input type="text" id="newReportPlate" placeholder="AB-123-CD" 
+                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">VIN</label>
+                                <input type="text" id="newReportVin" placeholder="Numéro d'identification" 
+                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            </div>
+                        </div>
+
+                        <!-- Localisation -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Lieu de l'incident *</label>
+                                <input type="text" id="newReportLocation" placeholder="Adresse ou lieu" 
+                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Date et heure *</label>
+                                <input type="datetime-local" id="newReportDateTime" 
+                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" required>
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Description détaillée *</label>
+                            <textarea id="newReportDescription" rows="4" placeholder="Décrivez l'incident en détail..." 
+                                      class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" required></textarea>
+                        </div>
+
+                        <!-- Informations de contact -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Nom du déclarant</label>
+                                <input type="text" id="newReportDeclarant" placeholder="Nom complet" 
+                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-2">Téléphone</label>
+                                <input type="tel" id="newReportPhone" placeholder="Numéro de téléphone" 
+                                       class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                            </div>
+                        </div>
+
+                        <!-- Documents -->
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Documents joints</label>
+                            <div class="border-2 border-dashed border-gray-600 rounded-lg p-4 text-center">
+                                <input type="file" id="newReportFiles" multiple accept="image/*,application/pdf" class="hidden">
+                                <svg class="w-8 h-8 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                </svg>
+                                <p class="text-gray-400">Cliquez pour sélectionner des fichiers</p>
+                                <p class="text-xs text-gray-500 mt-1">Images et PDF acceptés</p>
+                            </div>
+                            <div id="fileList" class="mt-2"></div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex justify-end space-x-4 pt-4 border-t border-gray-600">
+                            <button type="button" onclick="closeNewReportModal()" class="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-all">
+                                Annuler
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-all">
+                                Créer le signalement
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal détails signalement -->
+    <div id="reportDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-gray-800 rounded-xl shadow-2xl max-w-4xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold">📋 Détails du Signalement</h3>
+                        <button onclick="closeReportDetailsModal()" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="reportDetailsContent">
+                        <!-- Contenu généré dynamiquement -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script>
+        // Variables globales
+        let reports = [];
+        let filteredReports = [];
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            loadReports();
+            generateDemoReports();
+            updateStats();
+            renderReports();
+            
+            // Date par défaut pour nouveau signalement
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('newReportDateTime').value = now.toISOString().slice(0, 16);
+            
+            // Gestionnaire de fichiers
+            setupFileHandler();
+        });
+
+        // Charger les signalements
+        function loadReports() {
+            const stored = localStorage.getItem('reports_data');
+            if (stored) {
+                reports = JSON.parse(stored);
+            }
+            filteredReports = [...reports];
+        }
+
+        // Sauvegarder les signalements
+        function saveReports() {
+            localStorage.setItem('reports_data', JSON.stringify(reports));
+        }
+
+        // Générer des données de démonstration
+        function generateDemoReports() {
+            if (reports.length === 0) {
+                const types = ['vol', 'accident', 'infraction', 'technique', 'autre'];
+                const statuses = ['nouveau', 'en-cours', 'attente', 'resolu', 'ferme'];
+                const priorities = ['critique', 'haute', 'normale', 'basse'];
+                const plates = ['AB-123-CD', 'EF-456-GH', 'IJ-789-KL', 'MN-012-OP'];
+                const locations = ['Paris 15e', 'Lyon Centre', 'Marseille Nord', 'Toulouse Sud'];
+                
+                for (let i = 0; i < 25; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - Math.floor(Math.random() * 60));
+                    
+                    const type = types[Math.floor(Math.random() * types.length)];
+                    const status = statuses[Math.floor(Math.random() * statuses.length)];
+                    
+                    reports.push({
+                        id: 'RPT-' + Date.now() + '-' + i.toString().padStart(3, '0'),
+                        type: type,
+                        status: status,
+                        priority: priorities[Math.floor(Math.random() * priorities.length)],
+                        plate: plates[Math.floor(Math.random() * plates.length)],
+                        vin: 'VF' + Math.random().toString(36).substr(2, 15).toUpperCase(),
+                        location: locations[Math.floor(Math.random() * locations.length)],
+                        dateTime: date.toISOString(),
+                        createdAt: date.toISOString(),
+                        description: this.getRandomDescription(type),
+                        declarant: 'Utilisateur ' + (i + 1),
+                        phone: '06 ' + Math.floor(Math.random() * 90000000 + 10000000),
+                        assignedTo: Math.random() > 0.5 ? 'Agent ' + Math.floor(Math.random() * 10) : null,
+                        notes: [],
+                        attachments: Math.random() > 0.7 ? ['photo1.jpg', 'rapport.pdf'] : []
+                    });
+                }
+                
+                saveReports();
+                filteredReports = [...reports];
+            }
+        }
+
+        // Description aléatoire selon le type
+        function getRandomDescription(type) {
+            const descriptions = {
+                vol: ['Véhicule volé dans un parking souterrain', 'Vol avec effraction dans la rue', 'Disparition suspecte du véhicule'],
+                accident: ['Collision avec un autre véhicule', 'Accident contre un obstacle', 'Carambolage sur autoroute'],
+                infraction: ['Excès de vitesse constaté', 'Stationnement interdit', 'Franchissement feu rouge'],
+                technique: ['Panne mécanique majeure', 'Défaillance du système de freinage', 'Problème électronique'],
+                autre: ['Incident divers', 'Situation particulière', 'Cas non classé']
+            };
+            
+            const options = descriptions[type] || ['Incident non spécifié'];
+            return options[Math.floor(Math.random() * options.length)];
+        }
+
+        // Mettre à jour les statistiques
+        function updateStats() {
+            const activeReports = reports.filter(r => ['nouveau', 'en-cours'].includes(r.status)).length;
+            const pendingReports = reports.filter(r => r.status === 'attente').length;
+            const resolvedReports = reports.filter(r => ['resolu', 'ferme'].includes(r.status)).length;
+            
+            document.getElementById('activeReports').textContent = activeReports;
+            document.getElementById('pendingReports').textContent = pendingReports;
+            document.getElementById('resolvedReports').textContent = resolvedReports;
+            document.getElementById('reportCount').textContent = `${filteredReports.length} signalement(s)`;
+        }
+
+        // Appliquer les filtres
+        function applyFilters() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const priorityFilter = document.getElementById('priorityFilter').value;
+            const periodFilter = document.getElementById('periodFilter').value;
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const sortOrder = document.getElementById('sortOrder').value;
+            
+            let filtered = [...reports];
+            
+            // Filtres
+            if (typeFilter !== 'all') {
+                filtered = filtered.filter(r => r.type === typeFilter);
+            }
+            
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(r => r.status === statusFilter);
+            }
+            
+            if (priorityFilter !== 'all') {
+                filtered = filtered.filter(r => r.priority === priorityFilter);
+            }
+            
+            // Filtre de période
+            if (periodFilter !== 'all') {
+                const now = new Date();
+                let cutoffDate;
+                
+                switch (periodFilter) {
+                    case 'today':
+                        cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        break;
+                    case 'week':
+                        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case 'month':
+                        cutoffDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        break;
+                }
+                
+                if (cutoffDate) {
+                    filtered = filtered.filter(r => new Date(r.createdAt) >= cutoffDate);
+                }
+            }
+            
+            // Recherche textuelle
+            if (searchInput) {
+                filtered = filtered.filter(r => 
+                    r.id.toLowerCase().includes(searchInput) ||
+                    r.plate.toLowerCase().includes(searchInput) ||
+                    r.description.toLowerCase().includes(searchInput) ||
+                    r.location.toLowerCase().includes(searchInput) ||
+                    r.declarant.toLowerCase().includes(searchInput)
+                );
+            }
+            
+            // Tri
+            filtered.sort((a, b) => {
+                switch (sortOrder) {
+                    case 'recent':
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    case 'oldest':
+                        return new Date(a.createdAt) - new Date(b.createdAt);
+                    case 'priority':
+                        const priorityOrder = { 'critique': 0, 'haute': 1, 'normale': 2, 'basse': 3 };
+                        return priorityOrder[a.priority] - priorityOrder[b.priority];
+                    case 'status':
+                        return a.status.localeCompare(b.status);
+                    default:
+                        return 0;
+                }
+            });
+            
+            filteredReports = filtered;
+            updateStats();
+            renderReports();
+        }
+
+        // Afficher les signalements
+        function renderReports() {
+            const table = document.getElementById('reportsTable');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (filteredReports.length === 0) {
+                table.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            table.innerHTML = `
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-600">
+                            <th class="text-left py-3 px-4">Référence</th>
+                            <th class="text-left py-3 px-4">Type</th>
+                            <th class="text-left py-3 px-4">Statut</th>
+                            <th class="text-left py-3 px-4">Priorité</th>
+                            <th class="text-left py-3 px-4">Véhicule</th>
+                            <th class="text-left py-3 px-4">Lieu</th>
+                            <th class="text-left py-3 px-4">Date</th>
+                            <th class="text-left py-3 px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${filteredReports.map(report => `
+                            <tr class="border-b border-gray-700 hover:bg-gray-700 transition-colors">
+                                <td class="py-3 px-4">
+                                    <div class="font-mono text-blue-400">${report.id}</div>
+                                    <div class="text-xs text-gray-400">${formatDate(report.createdAt)}</div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs ${getTypeClass(report.type)}">
+                                        ${getTypeIcon(report.type)} ${getTypeText(report.type)}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs ${getStatusClass(report.status)}">
+                                        ${getStatusText(report.status)}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs ${getPriorityClass(report.priority)}">
+                                        ${getPriorityIcon(report.priority)} ${getPriorityText(report.priority)}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="font-mono">${report.plate || '---'}</div>
+                                    <div class="text-xs text-gray-400">${report.vin ? report.vin.substring(0, 8) + '...' : '---'}</div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="text-sm">${report.location}</div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="text-sm">${formatDateTime(report.dateTime)}</div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <div class="flex items-center space-x-2">
+                                        <button onclick="showReportDetails('${report.id}')" class="text-blue-400 hover:text-blue-300" title="Voir détails">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                                            </svg>
+                                        </button>
+                                        <button onclick="editReport('${report.id}')" class="text-yellow-400 hover:text-yellow-300" title="Éditer">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                            </svg>
+                                        </button>
+                                        <button onclick="deleteReport('${report.id}')" class="text-red-400 hover:text-red-300" title="Supprimer">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Fonctions utilitaires
+        function getTypeClass(type) {
+            const classes = {
+                vol: 'bg-red-900 text-red-100',
+                accident: 'bg-orange-900 text-orange-100',
+                infraction: 'bg-yellow-900 text-yellow-100',
+                technique: 'bg-blue-900 text-blue-100',
+                autre: 'bg-gray-700 text-gray-100'
+            };
+            return classes[type] || classes.autre;
+        }
+
+        function getTypeIcon(type) {
+            const icons = {
+                vol: '🚨',
+                accident: '💥',
+                infraction: '⚠️',
+                technique: '🔧',
+                autre: '❓'
+            };
+            return icons[type] || icons.autre;
+        }
+
+        function getTypeText(type) {
+            const texts = {
+                vol: 'Vol',
+                accident: 'Accident',
+                infraction: 'Infraction',
+                technique: 'Technique',
+                autre: 'Autre'
+            };
+            return texts[type] || 'Inconnu';
+        }
+
+        function getStatusClass(status) {
+            const classes = {
+                nouveau: 'bg-blue-900 text-blue-100',
+                'en-cours': 'bg-yellow-900 text-yellow-100',
+                attente: 'bg-orange-900 text-orange-100',
+                resolu: 'bg-green-900 text-green-100',
+                ferme: 'bg-gray-700 text-gray-100'
+            };
+            return classes[status] || classes.nouveau;
+        }
+
+        function getStatusText(status) {
+            const texts = {
+                nouveau: 'Nouveau',
+                'en-cours': 'En cours',
+                attente: 'En attente',
+                resolu: 'Résolu',
+                ferme: 'Fermé'
+            };
+            return texts[status] || 'Inconnu';
+        }
+
+        function getPriorityClass(priority) {
+            const classes = {
+                critique: 'bg-red-900 text-red-100',
+                haute: 'bg-orange-900 text-orange-100',
+                normale: 'bg-green-900 text-green-100',
+                basse: 'bg-blue-900 text-blue-100'
+            };
+            return classes[priority] || classes.normale;
+        }
+
+        function getPriorityIcon(priority) {
+            const icons = {
+                critique: '🔴',
+                haute: '🟡',
+                normale: '🟢',
+                basse: '🔵'
+            };
+            return icons[priority] || icons.normale;
+        }
+
+        function getPriorityText(priority) {
+            const texts = {
+                critique: 'Critique',
+                haute: 'Haute',
+                normale: 'Normale',
+                basse: 'Basse'
+            };
+            return texts[priority] || 'Normale';
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) {
+                return 'Aujourd\'hui';
+            } else if (diffDays <= 7) {
+                return `Il y a ${diffDays - 1} jour(s)`;
+            } else {
+                return date.toLocaleDateString('fr-FR');
+            }
+        }
+
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('fr-FR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Gestion des modales
+        function showNewReportModal() {
+            document.getElementById('newReportModal').classList.remove('hidden');
+        }
+
+        function closeNewReportModal() {
+            document.getElementById('newReportModal').classList.add('hidden');
+            document.getElementById('newReportForm').reset();
+        }
+
+        function showReportDetails(reportId) {
+            const report = reports.find(r => r.id === reportId);
+            if (!report) return;
+            
+            const modal = document.getElementById('reportDetailsModal');
+            const content = document.getElementById('reportDetailsContent');
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <!-- En-tête -->
+                    <div class="flex items-center justify-between p-4 bg-gray-700 rounded-lg">
+                        <div>
+                            <h4 class="text-lg font-bold">${report.id}</h4>
+                            <p class="text-gray-400">Créé le ${formatDateTime(report.createdAt)}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="inline-flex items-center px-3 py-1 rounded-full text-sm ${getStatusClass(report.status)} mb-2">
+                                ${getStatusText(report.status)}
+                            </div>
+                            <div class="inline-flex items-center px-3 py-1 rounded-full text-sm ${getPriorityClass(report.priority)}">
+                                ${getPriorityIcon(report.priority)} ${getPriorityText(report.priority)}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informations principales -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h5 class="font-semibold mb-3">Incident</h5>
+                            <div class="space-y-2">
+                                <div><span class="text-gray-400">Type:</span> ${getTypeIcon(report.type)} ${getTypeText(report.type)}</div>
+                                <div><span class="text-gray-400">Lieu:</span> ${report.location}</div>
+                                <div><span class="text-gray-400">Date:</span> ${formatDateTime(report.dateTime)}</div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h5 class="font-semibold mb-3">Véhicule</h5>
+                            <div class="space-y-2">
+                                <div><span class="text-gray-400">Plaque:</span> <span class="font-mono">${report.plate || 'Non spécifiée'}</span></div>
+                                <div><span class="text-gray-400">VIN:</span> <span class="font-mono text-xs">${report.vin || 'Non spécifié'}</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <div>
+                        <h5 class="font-semibold mb-3">Description</h5>
+                        <div class="bg-gray-700 p-4 rounded-lg">
+                            ${report.description}
+                        </div>
+                    </div>
+                    
+                    <!-- Contact -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h5 class="font-semibold mb-3">Déclarant</h5>
+                            <div class="space-y-2">
+                                <div><span class="text-gray-400">Nom:</span> ${report.declarant}</div>
+                                <div><span class="text-gray-400">Téléphone:</span> ${report.phone}</div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <h5 class="font-semibold mb-3">Assignation</h5>
+                            <div class="space-y-2">
+                                <div><span class="text-gray-400">Assigné à:</span> ${report.assignedTo || 'Non assigné'}</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Documents -->
+                    ${report.attachments.length > 0 ? `
+                        <div>
+                            <h5 class="font-semibold mb-3">Documents joints</h5>
+                            <div class="flex flex-wrap gap-2">
+                                ${report.attachments.map(file => `
+                                    <div class="bg-gray-700 px-3 py-2 rounded-lg text-sm">
+                                        📎 ${file}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Actions -->
+                    <div class="flex flex-wrap gap-2 pt-4 border-t border-gray-600">
+                        <button onclick="changeReportStatus('${report.id}')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-all">
+                            📝 Changer statut
+                        </button>
+                        <button onclick="assignReport('${report.id}')" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-all">
+                            👤 Assigner
+                        </button>
+                        <button onclick="addNote('${report.id}')" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-all">
+                            📝 Ajouter note
+                        </button>
+                        <button onclick="exportReport('${report.id}')" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-all">
+                            📄 Exporter
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeReportDetailsModal() {
+            document.getElementById('reportDetailsModal').classList.add('hidden');
+        }
+
+        // Gestionnaire du formulaire
+        document.getElementById('newReportForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const newReport = {
+                id: 'RPT-' + Date.now() + '-' + Math.floor(Math.random() * 1000).toString().padStart(3, '0'),
+                type: document.getElementById('newReportType').value,
+                priority: document.getElementById('newReportPriority').value,
+                plate: document.getElementById('newReportPlate').value,
+                vin: document.getElementById('newReportVin').value,
+                location: document.getElementById('newReportLocation').value,
+                dateTime: document.getElementById('newReportDateTime').value,
+                description: document.getElementById('newReportDescription').value,
+                declarant: document.getElementById('newReportDeclarant').value,
+                phone: document.getElementById('newReportPhone').value,
+                status: 'nouveau',
+                createdAt: new Date().toISOString(),
+                assignedTo: null,
+                notes: [],
+                attachments: []
+            };
+            
+            reports.unshift(newReport);
+            saveReports();
+            applyFilters();
+            closeNewReportModal();
+            
+            autoCheck.showNotification('Signalement Créé', `Référence: ${newReport.id}`, 'success');
+        });
+
+        // Gestionnaire de fichiers
+        function setupFileHandler() {
+            const fileInput = document.getElementById('newReportFiles');
+            const fileList = document.getElementById('fileList');
+            
+            // Clic sur la zone de dépôt
+            document.querySelector('.border-dashed').addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            // Changement de fichiers
+            fileInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                fileList.innerHTML = files.map(file => `
+                    <div class="flex items-center justify-between bg-gray-700 p-2 rounded text-sm">
+                        <span>📎 ${file.name}</span>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-300">
+                            ✕
+                        </button>
+                    </div>
+                `).join('');
+            });
+        }
+
+        // Actions rapides
+        function refreshReports() {
+            applyFilters();
+            autoCheck.showNotification('Actualisé', 'Liste des signalements mise à jour', 'info');
+        }
+
+        function resetFilters() {
+            document.getElementById('typeFilter').value = 'all';
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('priorityFilter').value = 'all';
+            document.getElementById('periodFilter').value = 'all';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('sortOrder').value = 'recent';
+            applyFilters();
+        }
+
+        function exportReports() {
+            // Simulation d'export
+            autoCheck.showNotification('Export en cours', 'Génération du rapport...', 'info');
+            setTimeout(() => {
+                autoCheck.showNotification('Export Terminé', `${filteredReports.length} signalements exportés`, 'success');
+            }, 2000);
+        }
+
+        // Fonctions d'action sur les signalements
+        function editReport(reportId) {
+            autoCheck.showNotification('Édition', 'Fonctionnalité d\'édition à venir', 'info');
+        }
+
+        function deleteReport(reportId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer ce signalement ?')) {
+                reports = reports.filter(r => r.id !== reportId);
+                saveReports();
+                applyFilters();
+                autoCheck.showNotification('Signalement Supprimé', 'Le signalement a été supprimé', 'success');
+            }
+        }
+
+        function changeReportStatus(reportId) {
+            autoCheck.showNotification('Statut', 'Fonctionnalité de changement de statut à venir', 'info');
+            closeReportDetailsModal();
+        }
+
+        function assignReport(reportId) {
+            autoCheck.showNotification('Assignation', 'Fonctionnalité d\'assignation à venir', 'info');
+            closeReportDetailsModal();
+        }
+
+        function addNote(reportId) {
+            autoCheck.showNotification('Note', 'Fonctionnalité d\'ajout de notes à venir', 'info');
+            closeReportDetailsModal();
+        }
+
+        function exportReport(reportId) {
+            autoCheck.showNotification('Export', 'Export du signalement en cours...', 'info');
+            closeReportDetailsModal();
+        }
+
+        function showBulkActionsModal() {
+            autoCheck.showNotification('Actions Groupées', 'Fonctionnalité à venir', 'info');
+        }
+
+        function generateReport() {
+            autoCheck.showNotification('Rapport', 'Génération de rapport en cours...', 'info');
+        }
+
+        function showSettingsModal() {
+            autoCheck.showNotification('Paramètres', 'Paramètres des signalements à venir', 'info');
+        }
+
+        // Fermer les modales en cliquant à l'extérieur
+        ['newReportModal', 'reportDetailsModal'].forEach(modalId => {
+            document.getElementById(modalId).addEventListener('click', (e) => {
+                if (e.target.id === modalId) {
+                    document.getElementById(modalId).classList.add('hidden');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoCheck - Gestion des Utilisateurs</title>
+    <link href="../output.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #111827; color: #f3f4f6; min-height: 100vh; }
+
+        .header { background: #1f2937; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #374151; }
+        .header-left { display: flex; align-items: center; gap: 1rem; }
+        .back-btn { background: none; border: none; color: #9ca3af; cursor: pointer; padding: 0.5rem; border-radius: 0.5rem; transition: all 0.2s; }
+        .back-btn:hover { color: #fff; background: #374151; }
+        .header h1 { font-size: 1.5rem; font-weight: 700; }
+        .header-actions { display: flex; gap: 0.75rem; }
+
+        .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; display: flex; align-items: center; gap: 0.5rem; color: #fff; }
+        .btn-primary { background: #3b82f6; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success { background: #10b981; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-secondary { background: #4b5563; }
+        .btn-secondary:hover { background: #374151; }
+        .btn-warning { background: #f59e0b; }
+        .btn-warning:hover { background: #d97706; }
+        .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.75rem; }
+        .btn-icon { width: 2rem; height: 2rem; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 0.4rem; }
+
+        .layout { display: flex; min-height: calc(100vh - 65px); }
+
+        /* Sidebar */
+        .sidebar { width: 280px; background: #1f2937; padding: 1.5rem; border-right: 1px solid #374151; overflow-y: auto; }
+        .sidebar h2 { font-size: 1.125rem; font-weight: 700; margin-bottom: 1rem; }
+        .stat-card { padding: 1rem; border-radius: 0.75rem; margin-bottom: 0.75rem; }
+        .stat-card .stat-label { font-size: 0.75rem; opacity: 0.85; }
+        .stat-card .stat-value { font-size: 1.75rem; font-weight: 700; }
+        .stat-blue { background: #1e40af; }
+        .stat-green { background: #065f46; }
+        .stat-yellow { background: #92400e; }
+        .stat-red { background: #991b1b; }
+
+        .role-list { margin-top: 1.5rem; }
+        .role-item { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem; background: #374151; border-radius: 0.5rem; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s; }
+        .role-item:hover { background: #4b5563; }
+        .role-item.active { border-left: 3px solid #3b82f6; }
+        .role-badge { padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+
+        /* Main */
+        .main-content { flex: 1; padding: 1.5rem; overflow-y: auto; }
+        .search-bar { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+        .search-input { flex: 1; position: relative; }
+        .search-input input { width: 100%; background: #1f2937; border: 1px solid #374151; color: #fff; padding: 0.625rem 0.75rem 0.625rem 2.5rem; border-radius: 0.5rem; font-size: 0.875rem; }
+        .search-input input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.2); }
+        .search-input svg { position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 1.25rem; height: 1.25rem; color: #6b7280; }
+
+        /* Table */
+        .table-container { background: #1f2937; border-radius: 0.75rem; overflow: hidden; border: 1px solid #374151; }
+        .table-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-bottom: 1px solid #374151; }
+        .table-header h2 { font-size: 1.125rem; font-weight: 700; }
+        table { width: 100%; border-collapse: collapse; }
+        thead th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; text-transform: uppercase; color: #9ca3af; border-bottom: 1px solid #374151; font-weight: 600; letter-spacing: 0.05em; }
+        tbody td { padding: 0.75rem 1rem; border-bottom: 1px solid #1f2937; font-size: 0.875rem; }
+        tbody tr { background: #111827; transition: background 0.15s; }
+        tbody tr:hover { background: #1f2937; }
+
+        .user-cell { display: flex; align-items: center; gap: 0.75rem; }
+        .user-avatar { width: 2.5rem; height: 2.5rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.9rem; color: #fff; flex-shrink: 0; }
+        .user-info .user-name { font-weight: 600; color: #f3f4f6; }
+        .user-info .user-email { font-size: 0.75rem; color: #9ca3af; }
+
+        .status-badge { padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+        .status-active { background: #065f46; color: #6ee7b7; }
+        .status-inactive { background: #991b1b; color: #fca5a5; }
+        .status-suspended { background: #92400e; color: #fcd34d; }
+
+        .role-tag { padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+        .role-admin { background: #312e81; color: #a5b4fc; }
+        .role-agent { background: #1e3a5f; color: #93c5fd; }
+        .role-supervisor { background: #3b1f5e; color: #c4b5fd; }
+        .role-operator { background: #1e4040; color: #5eead4; }
+
+        .actions-cell { display: flex; gap: 0.25rem; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; align-items: center; justify-content: center; backdrop-filter: blur(4px); }
+        .modal-overlay.show { display: flex; }
+        .modal { background: #1f2937; border-radius: 0.75rem; width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; border: 1px solid #374151; box-shadow: 0 25px 50px rgba(0,0,0,0.5); }
+        .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 1.5rem; border-bottom: 1px solid #374151; }
+        .modal-header h3 { font-size: 1.125rem; font-weight: 700; }
+        .modal-body { padding: 1.5rem; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid #374151; }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-size: 0.875rem; font-weight: 500; margin-bottom: 0.5rem; color: #d1d5db; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; background: #111827; border: 1px solid #374151; color: #fff; padding: 0.625rem 0.75rem; border-radius: 0.5rem; font-size: 0.875rem; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.15); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+        .permission-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+        .perm-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background: #111827; border-radius: 0.5rem; font-size: 0.8rem; }
+        .perm-item input[type="checkbox"] { accent-color: #3b82f6; width: 1rem; height: 1rem; }
+
+        /* Pagination */
+        .pagination { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; border-top: 1px solid #374151; }
+        .page-info { font-size: 0.8rem; color: #9ca3af; }
+        .page-btns { display: flex; gap: 0.25rem; }
+        .page-btn { padding: 0.4rem 0.75rem; background: #374151; border: none; color: #d1d5db; border-radius: 0.375rem; cursor: pointer; font-size: 0.8rem; transition: all 0.15s; }
+        .page-btn:hover { background: #4b5563; }
+        .page-btn.active { background: #3b82f6; color: #fff; }
+
+        .empty-state { text-align: center; padding: 3rem; color: #6b7280; }
+        .empty-state svg { width: 4rem; height: 4rem; margin: 0 auto 1rem; }
+    </style>
+</head>
+<body>
+    <!-- En-tête -->
+    <div class="header">
+        <div class="header-left">
+            <button class="back-btn" onclick="autoCheck.navigateTo('dashboard')">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <h1>👥 Gestion des Utilisateurs</h1>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-primary" onclick="openUserModal()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                Nouvel Utilisateur
+            </button>
+            <button class="btn btn-secondary" onclick="exportUsers()">
+                <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Exporter
+            </button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h2>📊 Statistiques</h2>
+            <div class="stat-card stat-blue">
+                <div class="stat-label">Utilisateurs Total</div>
+                <div class="stat-value" id="statTotal">0</div>
+            </div>
+            <div class="stat-card stat-green">
+                <div class="stat-label">Actifs</div>
+                <div class="stat-value" id="statActive">0</div>
+            </div>
+            <div class="stat-card stat-yellow">
+                <div class="stat-label">Suspendus</div>
+                <div class="stat-value" id="statSuspended">0</div>
+            </div>
+            <div class="stat-card stat-red">
+                <div class="stat-label">Inactifs</div>
+                <div class="stat-value" id="statInactive">0</div>
+            </div>
+
+            <!-- Filtres par rôle -->
+            <div class="role-list">
+                <h2>🏷️ Rôles</h2>
+                <div class="role-item active" onclick="filterByRole('all', this)" data-role="all">
+                    <span>Tous les rôles</span>
+                    <span class="role-badge" style="background:#374151; color:#d1d5db;" id="countAll">0</span>
+                </div>
+                <div class="role-item" onclick="filterByRole('admin', this)" data-role="admin">
+                    <span>🔑 Administrateurs</span>
+                    <span class="role-badge role-admin" id="countAdmin">0</span>
+                </div>
+                <div class="role-item" onclick="filterByRole('supervisor', this)" data-role="supervisor">
+                    <span>👁️ Superviseurs</span>
+                    <span class="role-badge role-supervisor" id="countSupervisor">0</span>
+                </div>
+                <div class="role-item" onclick="filterByRole('agent', this)" data-role="agent">
+                    <span>🛡️ Agents</span>
+                    <span class="role-badge role-agent" id="countAgent">0</span>
+                </div>
+                <div class="role-item" onclick="filterByRole('operator', this)" data-role="operator">
+                    <span>💻 Opérateurs</span>
+                    <span class="role-badge role-operator" id="countOperator">0</span>
+                </div>
+            </div>
+
+            <!-- Activité récente -->
+            <div style="margin-top: 1.5rem;">
+                <h2>🕐 Activité Récente</h2>
+                <div id="recentActivity" style="margin-top: 0.75rem; font-size: 0.8rem; color: #9ca3af;">
+                    <!-- Chargé dynamiquement -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenu principal -->
+        <div class="main-content">
+            <!-- Barre de recherche -->
+            <div class="search-bar">
+                <div class="search-input">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                    <input type="text" id="searchInput" placeholder="Rechercher par nom, email, matricule..." oninput="applyFilters()">
+                </div>
+                <select id="statusFilter" style="background:#1f2937; border:1px solid #374151; color:#fff; padding:0.625rem; border-radius:0.5rem; font-size:0.875rem;" onchange="applyFilters()">
+                    <option value="all">Tous les statuts</option>
+                    <option value="active">Actifs</option>
+                    <option value="suspended">Suspendus</option>
+                    <option value="inactive">Inactifs</option>
+                </select>
+                <select id="sortOrder" style="background:#1f2937; border:1px solid #374151; color:#fff; padding:0.625rem; border-radius:0.5rem; font-size:0.875rem;" onchange="applyFilters()">
+                    <option value="name">Nom (A-Z)</option>
+                    <option value="recent">Plus récent</option>
+                    <option value="role">Par rôle</option>
+                    <option value="lastLogin">Dernière connexion</option>
+                </select>
+            </div>
+
+            <!-- Tableau des utilisateurs -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>Liste des Utilisateurs</h2>
+                    <span style="font-size: 0.8rem; color: #9ca3af;" id="filteredCount">0 utilisateurs</span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Utilisateur</th>
+                            <th>Rôle</th>
+                            <th>Matricule</th>
+                            <th>Statut</th>
+                            <th>Dernière Connexion</th>
+                            <th>Recherches</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- Chargé dynamiquement -->
+                    </tbody>
+                </table>
+
+                <!-- État vide -->
+                <div id="emptyState" class="empty-state" style="display:none;">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color:#4b5563;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                    <h3 style="font-size: 1.125rem; font-weight: 600; margin-bottom: 0.5rem;">Aucun utilisateur trouvé</h3>
+                    <p>Aucun résultat ne correspond à votre recherche.</p>
+                </div>
+
+                <!-- Pagination -->
+                <div class="pagination" id="pagination">
+                    <div class="page-info" id="pageInfo">Affichage 1-10 sur 0</div>
+                    <div class="page-btns" id="pageBtns"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Utilisateur -->
+    <div class="modal-overlay" id="userModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modalTitle">Nouvel Utilisateur</h3>
+                <button class="back-btn" onclick="closeUserModal()">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Prénom *</label>
+                            <input type="text" id="firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nom *</label>
+                            <input type="text" id="lastName" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" id="userEmail" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Téléphone</label>
+                            <input type="tel" id="userPhone" placeholder="+33 6 XX XX XX XX">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Rôle *</label>
+                            <select id="userRole" required>
+                                <option value="">Sélectionner un rôle</option>
+                                <option value="admin">🔑 Administrateur</option>
+                                <option value="supervisor">👁️ Superviseur</option>
+                                <option value="agent">🛡️ Agent</option>
+                                <option value="operator">💻 Opérateur</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Matricule *</label>
+                            <input type="text" id="userMatricule" placeholder="AC-XXXX" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Service</label>
+                            <input type="text" id="userService" placeholder="ex: Brigade de sûreté">
+                        </div>
+                        <div class="form-group">
+                            <label>Statut</label>
+                            <select id="userStatus">
+                                <option value="active">✅ Actif</option>
+                                <option value="suspended">⏸️ Suspendu</option>
+                                <option value="inactive">❌ Inactif</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Permissions -->
+                    <div class="form-group">
+                        <label>Permissions</label>
+                        <div class="permission-grid">
+                            <label class="perm-item"><input type="checkbox" name="perm" value="search" checked> 🔍 Recherche véhicules</label>
+                            <label class="perm-item"><input type="checkbox" name="perm" value="camera" checked> 📷 Scanner caméra</label>
+                            <label class="perm-item"><input type="checkbox" name="perm" value="history"> 📋 Historique complet</label>
+                            <label class="perm-item"><input type="checkbox" name="perm" value="reports"> 🚨 Signalements</label>
+                            <label class="perm-item"><input type="checkbox" name="perm" value="users"> 👥 Gestion utilisateurs</label>
+                            <label class="perm-item"><input type="checkbox" name="perm" value="settings"> ⚙️ Paramètres système</label>
+                            <label class="perm-item"><input type="checkbox" name="perm" value="export"> 📤 Export données</label>
+                            <label class="perm-item"><input type="checkbox" name="perm" value="delete"> 🗑️ Suppression données</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="userNotes" rows="2" placeholder="Notes sur l'utilisateur..." style="resize: vertical;"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeUserModal()">Annuler</button>
+                <button class="btn btn-primary" onclick="saveUser()">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal confirmation suppression -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3>⚠️ Confirmer la suppression</h3>
+                <button class="back-btn" onclick="closeDeleteModal()">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="color: #d1d5db;">Êtes-vous sûr de vouloir supprimer l'utilisateur <strong id="deleteUserName"></strong> ? Cette action est irréversible.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">Annuler</button>
+                <button class="btn btn-danger" onclick="confirmDeleteUser()">Supprimer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script>
+        // ───────── STATE ─────────
+        let users = [];
+        let filteredUsers = [];
+        let currentRoleFilter = 'all';
+        let currentPage = 1;
+        const PAGE_SIZE = 10;
+        let editingUserId = null;
+        let deletingUserId = null;
+
+        // ───────── INIT ─────────
+        document.addEventListener('DOMContentLoaded', () => {
+            loadUsers();
+            if (users.length === 0) generateDemoUsers();
+            applyFilters();
+        });
+
+        // ───────── DATA ─────────
+        function loadUsers() {
+            const stored = localStorage.getItem('autocheck_users');
+            if (stored) users = JSON.parse(stored);
+        }
+        function saveUsers() {
+            localStorage.setItem('autocheck_users', JSON.stringify(users));
+        }
+
+        function generateDemoUsers() {
+            const firstNames = ['Jean', 'Marie', 'Pierre', 'Sophie', 'Luc', 'Émilie', 'Thomas', 'Julie', 'Marc', 'Isabelle', 'Nicolas', 'Claire', 'Karim', 'Fatima', 'David'];
+            const lastNames = ['Dupont', 'Martin', 'Bernard', 'Moreau', 'Lefebvre', 'Garcia', 'Nguyen', 'Robert', 'Leroy', 'Petit', 'Durand', 'Bonnet', 'Lambert', 'Michel', 'Mercier'];
+            const roles = ['admin', 'supervisor', 'agent', 'agent', 'agent', 'operator', 'operator'];
+            const statuses = ['active', 'active', 'active', 'active', 'suspended', 'inactive'];
+            const services = ['Brigade de sûreté', 'Contrôle routier', 'Police judiciaire', 'Gendarmerie', 'Douanes', 'Préfecture'];
+            const avatarColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+
+            for (let i = 0; i < 22; i++) {
+                const first = firstNames[Math.floor(Math.random() * firstNames.length)];
+                const last = lastNames[Math.floor(Math.random() * lastNames.length)];
+                const role = roles[Math.floor(Math.random() * roles.length)];
+                const status = statuses[Math.floor(Math.random() * statuses.length)];
+                const created = new Date();
+                created.setDate(created.getDate() - Math.floor(Math.random() * 365));
+                const lastLogin = new Date();
+                lastLogin.setHours(lastLogin.getHours() - Math.floor(Math.random() * 720));
+
+                users.push({
+                    id: 'USR-' + Date.now() + '-' + i,
+                    firstName: first,
+                    lastName: last,
+                    email: `${first.toLowerCase()}.${last.toLowerCase()}@autocheck.fr`,
+                    phone: '+33 6 ' + Math.floor(10000000 + Math.random() * 90000000).toString().replace(/(\d{2})(\d{2})(\d{2})(\d{2})/, '$1 $2 $3 $4'),
+                    role: role,
+                    matricule: 'AC-' + Math.floor(1000 + Math.random() * 9000),
+                    service: services[Math.floor(Math.random() * services.length)],
+                    status: status,
+                    permissions: role === 'admin' ? ['search','camera','history','reports','users','settings','export','delete'] : ['search','camera'],
+                    notes: '',
+                    avatarColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
+                    createdAt: created.toISOString(),
+                    lastLogin: lastLogin.toISOString(),
+                    searchCount: Math.floor(Math.random() * 500)
+                });
+            }
+            saveUsers();
+        }
+
+        // ───────── FILTERS ─────────
+        function applyFilters() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            const sortOrder = document.getElementById('sortOrder').value;
+
+            let result = [...users];
+
+            // Role filter
+            if (currentRoleFilter !== 'all') {
+                result = result.filter(u => u.role === currentRoleFilter);
+            }
+
+            // Status filter
+            if (statusFilter !== 'all') {
+                result = result.filter(u => u.status === statusFilter);
+            }
+
+            // Search
+            if (search) {
+                result = result.filter(u =>
+                    `${u.firstName} ${u.lastName}`.toLowerCase().includes(search) ||
+                    u.email.toLowerCase().includes(search) ||
+                    u.matricule.toLowerCase().includes(search) ||
+                    u.service.toLowerCase().includes(search)
+                );
+            }
+
+            // Sort
+            result.sort((a, b) => {
+                switch (sortOrder) {
+                    case 'name': return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+                    case 'recent': return new Date(b.createdAt) - new Date(a.createdAt);
+                    case 'role': return a.role.localeCompare(b.role);
+                    case 'lastLogin': return new Date(b.lastLogin) - new Date(a.lastLogin);
+                    default: return 0;
+                }
+            });
+
+            filteredUsers = result;
+            currentPage = 1;
+            updateStats();
+            render();
+        }
+
+        function filterByRole(role, el) {
+            currentRoleFilter = role;
+            document.querySelectorAll('.role-item').forEach(r => r.classList.remove('active'));
+            if (el) el.classList.add('active');
+            applyFilters();
+        }
+
+        // ───────── STATS ─────────
+        function updateStats() {
+            document.getElementById('statTotal').textContent = users.length;
+            document.getElementById('statActive').textContent = users.filter(u => u.status === 'active').length;
+            document.getElementById('statSuspended').textContent = users.filter(u => u.status === 'suspended').length;
+            document.getElementById('statInactive').textContent = users.filter(u => u.status === 'inactive').length;
+
+            document.getElementById('countAll').textContent = users.length;
+            document.getElementById('countAdmin').textContent = users.filter(u => u.role === 'admin').length;
+            document.getElementById('countSupervisor').textContent = users.filter(u => u.role === 'supervisor').length;
+            document.getElementById('countAgent').textContent = users.filter(u => u.role === 'agent').length;
+            document.getElementById('countOperator').textContent = users.filter(u => u.role === 'operator').length;
+
+            document.getElementById('filteredCount').textContent = `${filteredUsers.length} utilisateur(s)`;
+
+            // Recent activity
+            const activity = users
+                .filter(u => u.lastLogin)
+                .sort((a, b) => new Date(b.lastLogin) - new Date(a.lastLogin))
+                .slice(0, 5);
+            document.getElementById('recentActivity').innerHTML = activity.map(u => `
+                <div style="padding: 0.5rem; background: #374151; border-radius: 0.375rem; margin-bottom: 0.4rem;">
+                    <div style="font-weight: 600; color: #e5e7eb;">${u.firstName} ${u.lastName}</div>
+                    <div style="font-size: 0.7rem;">Connexion: ${timeAgo(u.lastLogin)}</div>
+                </div>
+            `).join('');
+        }
+
+        // ───────── RENDER ─────────
+        function render() {
+            const tbody = document.getElementById('usersTableBody');
+            const empty = document.getElementById('emptyState');
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const pageUsers = filteredUsers.slice(start, start + PAGE_SIZE);
+
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                document.getElementById('pagination').style.display = 'none';
+                return;
+            }
+
+            empty.style.display = 'none';
+            document.getElementById('pagination').style.display = 'flex';
+
+            tbody.innerHTML = pageUsers.map(u => `
+                <tr>
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar" style="background: ${u.avatarColor};">
+                                ${u.firstName[0]}${u.lastName[0]}
+                            </div>
+                            <div class="user-info">
+                                <div class="user-name">${u.firstName} ${u.lastName}</div>
+                                <div class="user-email">${u.email}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="role-tag role-${u.role}">${getRoleLabel(u.role)}</span></td>
+                    <td style="font-family: monospace;">${u.matricule}</td>
+                    <td><span class="status-badge status-${u.status}">${getStatusLabel(u.status)}</span></td>
+                    <td style="font-size: 0.8rem; color: #9ca3af;">${timeAgo(u.lastLogin)}</td>
+                    <td style="text-align: center;">${u.searchCount}</td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn btn-icon btn-primary btn-sm" onclick="editUser('${u.id}')" title="Modifier">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            </button>
+                            <button class="btn btn-icon btn-warning btn-sm" onclick="toggleUserStatus('${u.id}')" title="Basculer le statut">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            </button>
+                            <button class="btn btn-icon btn-danger btn-sm" onclick="openDeleteModal('${u.id}')" title="Supprimer">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            renderPagination();
+        }
+
+        function renderPagination() {
+            const total = filteredUsers.length;
+            const totalPages = Math.ceil(total / PAGE_SIZE);
+            const start = (currentPage - 1) * PAGE_SIZE + 1;
+            const end = Math.min(currentPage * PAGE_SIZE, total);
+
+            document.getElementById('pageInfo').textContent = `Affichage ${start}-${end} sur ${total}`;
+
+            let btns = '';
+            for (let i = 1; i <= totalPages; i++) {
+                btns += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            document.getElementById('pageBtns').innerHTML = btns;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            render();
+        }
+
+        // ───────── HELPERS ─────────
+        function getRoleLabel(role) {
+            return { admin: '🔑 Admin', supervisor: '👁️ Superviseur', agent: '🛡️ Agent', operator: '💻 Opérateur' }[role] || role;
+        }
+        function getStatusLabel(status) {
+            return { active: 'Actif', suspended: 'Suspendu', inactive: 'Inactif' }[status] || status;
+        }
+        function timeAgo(dateStr) {
+            if (!dateStr) return '—';
+            const diff = Date.now() - new Date(dateStr).getTime();
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return 'À l\'instant';
+            if (mins < 60) return `Il y a ${mins} min`;
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return `Il y a ${hrs}h`;
+            const days = Math.floor(hrs / 24);
+            if (days < 30) return `Il y a ${days}j`;
+            return new Date(dateStr).toLocaleDateString('fr-FR');
+        }
+
+        // ───────── MODAL ─────────
+        function openUserModal(userId) {
+            editingUserId = userId || null;
+            const modal = document.getElementById('userModal');
+            const title = document.getElementById('modalTitle');
+
+            if (userId) {
+                const u = users.find(x => x.id === userId);
+                if (!u) return;
+                title.textContent = 'Modifier l\'utilisateur';
+                document.getElementById('firstName').value = u.firstName;
+                document.getElementById('lastName').value = u.lastName;
+                document.getElementById('userEmail').value = u.email;
+                document.getElementById('userPhone').value = u.phone || '';
+                document.getElementById('userRole').value = u.role;
+                document.getElementById('userMatricule').value = u.matricule;
+                document.getElementById('userService').value = u.service || '';
+                document.getElementById('userStatus').value = u.status;
+                document.getElementById('userNotes').value = u.notes || '';
+                // Permissions
+                document.querySelectorAll('input[name="perm"]').forEach(cb => {
+                    cb.checked = u.permissions.includes(cb.value);
+                });
+            } else {
+                title.textContent = 'Nouvel Utilisateur';
+                document.getElementById('userForm').reset();
+                document.querySelectorAll('input[name="perm"]').forEach((cb, i) => cb.checked = i < 2);
+            }
+
+            modal.classList.add('show');
+        }
+        function closeUserModal() {
+            document.getElementById('userModal').classList.remove('show');
+            editingUserId = null;
+        }
+
+        function saveUser() {
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const email = document.getElementById('userEmail').value.trim();
+            const role = document.getElementById('userRole').value;
+            const matricule = document.getElementById('userMatricule').value.trim();
+
+            if (!firstName || !lastName || !email || !role || !matricule) {
+                autoCheck.showNotification('Erreur', 'Veuillez remplir tous les champs obligatoires', 'error');
+                return;
+            }
+
+            const perms = Array.from(document.querySelectorAll('input[name="perm"]:checked')).map(cb => cb.value);
+            const avatarColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
+
+            if (editingUserId) {
+                const u = users.find(x => x.id === editingUserId);
+                if (u) {
+                    u.firstName = firstName;
+                    u.lastName = lastName;
+                    u.email = email;
+                    u.phone = document.getElementById('userPhone').value;
+                    u.role = role;
+                    u.matricule = matricule;
+                    u.service = document.getElementById('userService').value;
+                    u.status = document.getElementById('userStatus').value;
+                    u.permissions = perms;
+                    u.notes = document.getElementById('userNotes').value;
+                    autoCheck.showNotification('Modifié', `Utilisateur ${firstName} ${lastName} mis à jour`, 'success');
+                }
+            } else {
+                users.unshift({
+                    id: 'USR-' + Date.now(),
+                    firstName, lastName, email,
+                    phone: document.getElementById('userPhone').value,
+                    role, matricule,
+                    service: document.getElementById('userService').value,
+                    status: document.getElementById('userStatus').value,
+                    permissions: perms,
+                    notes: document.getElementById('userNotes').value,
+                    avatarColor: avatarColors[Math.floor(Math.random() * avatarColors.length)],
+                    createdAt: new Date().toISOString(),
+                    lastLogin: null,
+                    searchCount: 0
+                });
+                autoCheck.showNotification('Créé', `Utilisateur ${firstName} ${lastName} ajouté`, 'success');
+            }
+
+            saveUsers();
+            closeUserModal();
+            applyFilters();
+        }
+
+        function editUser(id) { openUserModal(id); }
+
+        // ───────── DELETE ─────────
+        function openDeleteModal(id) {
+            deletingUserId = id;
+            const u = users.find(x => x.id === id);
+            if (u) {
+                document.getElementById('deleteUserName').textContent = `${u.firstName} ${u.lastName}`;
+                document.getElementById('deleteModal').classList.add('show');
+            }
+        }
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+            deletingUserId = null;
+        }
+        function confirmDeleteUser() {
+            if (deletingUserId) {
+                users = users.filter(u => u.id !== deletingUserId);
+                saveUsers();
+                applyFilters();
+                autoCheck.showNotification('Supprimé', 'Utilisateur supprimé avec succès', 'success');
+            }
+            closeDeleteModal();
+        }
+
+        // ───────── STATUS TOGGLE ─────────
+        function toggleUserStatus(id) {
+            const u = users.find(x => x.id === id);
+            if (u) {
+                const cycle = { active: 'suspended', suspended: 'inactive', inactive: 'active' };
+                u.status = cycle[u.status] || 'active';
+                saveUsers();
+                applyFilters();
+                autoCheck.showNotification('Statut Modifié', `${u.firstName} ${u.lastName} → ${getStatusLabel(u.status)}`, 'info');
+            }
+        }
+
+        // ───────── EXPORT ─────────
+        function exportUsers() {
+            const data = filteredUsers.map(u => ({
+                'Nom': `${u.firstName} ${u.lastName}`,
+                'Email': u.email,
+                'Rôle': getRoleLabel(u.role),
+                'Matricule': u.matricule,
+                'Service': u.service,
+                'Statut': getStatusLabel(u.status),
+                'Recherches': u.searchCount,
+                'Dernière Connexion': u.lastLogin ? new Date(u.lastLogin).toLocaleString('fr-FR') : '—'
+            }));
+
+            const headers = Object.keys(data[0]);
+            const csv = [headers.join(','), ...data.map(row => headers.map(h => `"${row[h]}"`).join(','))].join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `utilisateurs_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+
+            autoCheck.showNotification('Export', `${filteredUsers.length} utilisateurs exportés`, 'success');
+        }
+
+        // ───────── CLOSE MODALS ON OUTSIDE CLICK ─────────
+        ['userModal', 'deleteModal'].forEach(id => {
+            document.getElementById(id).addEventListener('click', e => {
+                if (e.target.id === id) document.getElementById(id).classList.remove('show');
+            });
+        });
+    </script>
+</body>
+</html>

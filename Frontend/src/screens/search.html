@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoCheck - Recherche Véhicule</title>
+    <link href="../output.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .search-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .plate-input {
+            font-size: 2rem;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+            padding: 1.5rem;
+            border: 3px solid #3b82f6;
+            border-radius: 1rem;
+            background: white;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .plate-input:focus {
+            border-color: #1d4ed8;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1), 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .quick-plates {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.75rem;
+        }
+        
+        .quick-plate {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+        
+        .quick-plate:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .search-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        
+        .search-method {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .search-method:hover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            transform: translateY(-2px);
+        }
+        
+        .search-method.active {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+        
+        .search-results {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div style="display: flex; min-height: 100vh;">
+        <!-- Sidebar (réutilisée du dashboard) -->
+        <div class="sidebar">
+            <div style="margin-bottom: 2rem;">
+                <div style="display: flex; items-center; gap: 0.75rem; margin-bottom: 1rem;">
+                    <div style="width: 2.5rem; height: 2.5rem; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <svg style="width: 1.5rem; height: 1.5rem; color: white;" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <h2 style="color: white; font-size: 1.25rem; font-weight: bold;">AutoCheck</h2>
+                </div>
+                <div id="userInfo" style="color: #d1d5db; font-size: 0.875rem;">
+                    <p id="userName" style="margin: 0; font-weight: 500;"></p>
+                    <p id="userRole" style="margin: 0; opacity: 0.8;"></p>
+                </div>
+            </div>
+
+            <nav>
+                <div class="sidebar-item" onclick="autoCheck.navigateTo('dashboard')">
+                    <svg style="width: 1.25rem; height: 1.25rem;" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                    </svg>
+                    <span>Tableau de Bord</span>
+                </div>
+                
+                <div class="sidebar-item active" onclick="autoCheck.navigateTo('search')">
+                    <svg style="width: 1.25rem; height: 1.25rem;" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Recherche</span>
+                </div>
+                
+                <div class="sidebar-item" onclick="autoCheck.navigateTo('camera')">
+                    <svg style="width: 1.25rem; height: 1.25rem;" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Scanner Caméra</span>
+                </div>
+                
+                <div class="sidebar-item" onclick="autoCheck.navigateTo('history')">
+                    <svg style="width: 1.25rem; height: 1.25rem;" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Historique</span>
+                </div>
+                
+                <div class="sidebar-item" onclick="autoCheck.navigateTo('reports')">
+                    <svg style="width: 1.25rem; height: 1.25rem;" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Signalements</span>
+                </div>
+
+                <hr style="margin: 1.5rem 0; border-color: #374151;">
+                
+                <div class="sidebar-item" onclick="autoCheck.navigateTo('settings')">
+                    <svg style="width: 1.25rem; height: 1.25rem;" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Paramètres</span>
+                </div>
+
+                <div class="sidebar-item" onclick="autoCheck.logout()">
+                    <svg style="width: 1.25rem; height: 1.25rem;" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <span>Déconnexion</span>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Contenu principal -->
+        <div style="flex: 1; padding: 2rem; overflow-y: auto;">
+            <div class="search-container">
+                <!-- Header -->
+                <div style="text-align: center; margin-bottom: 3rem;">
+                    <h1 style="font-size: 2.5rem; font-weight: bold; color: #1f2937; margin: 0 0 0.5rem;">🔍 Recherche Véhicule</h1>
+                    <p style="color: #6b7280; font-size: 1.125rem;">Entrez une plaque d'immatriculation pour vérifier un véhicule</p>
+                </div>
+
+                <!-- Formulaire de recherche principal -->
+                <div class="card" style="margin-bottom: 2rem; padding: 2rem;">
+                    <form id="searchForm">
+                        <div style="margin-bottom: 2rem;">
+                            <label style="display: block; font-weight: 600; color: #374151; margin-bottom: 1rem; text-align: center;">
+                                Plaque d'immatriculation
+                            </label>
+                            <input 
+                                type="text" 
+                                id="plateInput" 
+                                class="plate-input"
+                                placeholder="AB-123-CD"
+                                maxlength="10"
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+                            <p style="text-align: center; color: #6b7280; margin-top: 0.5rem; font-size: 0.875rem;">
+                                Format accepté: AB-123-CD ou AB123CD
+                            </p>
+                        </div>
+
+                        <div style="display: flex; gap: 1rem; justify-content: center;">
+                            <button type="submit" class="btn-primary" style="padding: 1rem 2rem; font-size: 1.125rem;" id="searchButton">
+                                <svg style="width: 1.25rem; height: 1.25rem; margin-right: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                                </svg>
+                                <span id="searchButtonText">Rechercher</span>
+                                <div id="searchSpinner" class="loading-spinner" style="display: none; width: 1.25rem; height: 1.25rem; margin-left: 0.75rem;"></div>
+                            </button>
+                            
+                            <button type="button" class="btn-secondary" style="padding: 1rem 2rem; font-size: 1.125rem;" onclick="openCamera()">
+                                <svg style="width: 1.25rem; height: 1.25rem; margin-right: 0.75rem;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+                                </svg>
+                                Scanner
+                            </button>
+                            
+                            <button type="button" class="btn-warning" style="padding: 1rem 1.5rem; font-size: 1.125rem;" onclick="clearSearch()">
+                                <svg style="width: 1.25rem; height: 1.25rem;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Méthodes de recherche -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <h3 style="font-size: 1.25rem; font-weight: bold; margin: 0 0 1.5rem; text-align: center;">Méthodes de Recherche</h3>
+                    
+                    <div class="search-methods">
+                        <div class="search-method active" data-method="manual">
+                            <div style="width: 3rem; height: 3rem; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                <svg style="width: 1.5rem; height: 1.5rem; color: white;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z"/>
+                                    <path fill-rule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <h4 style="font-weight: 600; margin: 0 0 0.5rem;">Saisie Manuelle</h4>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">Tapez directement la plaque</p>
+                        </div>
+
+                        <div class="search-method" data-method="camera" onclick="openCamera()">
+                            <div style="width: 3rem; height: 3rem; background-color: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                <svg style="width: 1.5rem; height: 1.5rem; color: white;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v6a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <h4 style="font-weight: 600; margin: 0 0 0.5rem;">Scanner Caméra</h4>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">Reconnaissance automatique</p>
+                        </div>
+
+                        <div class="search-method" data-method="voice" onclick="startVoiceInput()">
+                            <div style="width: 3rem; height: 3rem; background-color: #7c3aed; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                <svg style="width: 1.5rem; height: 1.5rem; color: white;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <h4 style="font-weight: 600; margin: 0 0 0.5rem;">Reconnaissance Vocale</h4>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">Dictez la plaque</p>
+                        </div>
+
+                        <div class="search-method" data-method="batch" onclick="showBatchSearch()">
+                            <div style="width: 3rem; height: 3rem; background-color: #dc2626; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem;">
+                                <svg style="width: 1.5rem; height: 1.5rem; color: white;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+                                    <path fill-rule="evenodd" d="M4 5a2 2 0 012-2v1a2 2 0 002 2h4a2 2 0 002-2V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm2.5 6.5A.5.5 0 007 11h.01a.5.5 0 01.5.5v.01a.5.5 0 01-.5.5H7a.5.5 0 01-.5-.5v-.01zM9 11a.5.5 0 00-.5.5v.01a.5.5 0 00.5.5h.01a.5.5 0 00.5-.5V11.5a.5.5 0 00-.5-.5H9zm2.5.5A.5.5 0 0111 11h.01a.5.5 0 01.5.5v.01a.5.5 0 01-.5.5H11a.5.5 0 01-.5-.5v-.01zM7 13a.5.5 0 00-.5.5v.01a.5.5 0 00.5.5h.01a.5.5 0 00.5-.5V13.5a.5.5 0 00-.5-.5H7zm2.5.5a.5.5 0 01.5-.5h.01a.5.5 0 01.5.5v.01a.5.5 0 01-.5.5H9.5a.5.5 0 01-.5-.5V13.5zm1.5-.5a.5.5 0 00-.5.5v.01a.5.5 0 00.5.5h.01a.5.5 0 00.5-.5V13.5a.5.5 0 00-.5-.5H11z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <h4 style="font-weight: 600; margin: 0 0 0.5rem;">Recherche Multiple</h4>
+                            <p style="color: #6b7280; font-size: 0.875rem; margin: 0;">Plusieurs plaques à la fois</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historique rapide -->
+                <div class="card" style="margin-bottom: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h3 style="font-size: 1.25rem; font-weight: bold; margin: 0;">Recherches Récentes</h3>
+                        <button class="btn-secondary" style="font-size: 0.875rem; padding: 0.5rem 1rem;" onclick="autoCheck.navigateTo('history')">
+                            Voir tout
+                        </button>
+                    </div>
+                    
+                    <div id="quickPlates" class="quick-plates">
+                        <!-- Les plaques récentes seront ajoutées ici -->
+                    </div>
+                </div>
+
+                <!-- Suggestions -->
+                <div class="card">
+                    <h3 style="font-size: 1.25rem; font-weight: bold; margin: 0 0 1.5rem;">💡 Suggestions</h3>
+                    
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background-color: #eff6ff; border-radius: 0.5rem;">
+                            <div style="width: 2.5rem; height: 2.5rem; background-color: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg style="width: 1.25rem; height: 1.25rem; color: white;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p style="font-weight: 600; margin: 0; color: #1f2937;">Scan rapide</p>
+                                <p style="font-size: 0.875rem; color: #6b7280; margin: 0;">Utilisez la caméra pour plus de précision</p>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background-color: #f0fdf4; border-radius: 0.5rem;">
+                            <div style="width: 2.5rem; height: 2.5rem; background-color: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                <svg style="width: 1.25rem; height: 1.25rem; color: white;" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p style="font-weight: 600; margin: 0; color: #1f2937;">Historique</p>
+                                <p style="font-size: 0.875rem; color: #6b7280; margin: 0;">Consultez vos recherches précédentes</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script>
+        // Variables globales
+        let voiceRecognition;
+        let isListening = false;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            // Vérifier la connexion utilisateur
+            const user = autoCheck.getCurrentUser();
+            if (!user) {
+                autoCheck.navigateTo('login');
+                return;
+            }
+
+            initializeUserInterface(user);
+            loadQuickPlates(); 
+            setupVoiceRecognition();
+            
+            // Vérifier s'il y a une recherche en attente du dashboard
+            const pendingSearch = localStorage.getItem('pending_search');
+            if (pendingSearch) {
+                localStorage.removeItem('pending_search');
+                document.getElementById('plateInput').value = pendingSearch;
+                document.getElementById('plateInput').focus();
+            }
+
+            // Focus sur le champ de recherche
+            document.getElementById('plateInput').focus();
+        });
+
+        // Initialisation de l'interface utilisateur
+        function initializeUserInterface(user) {
+            document.getElementById('userName').textContent = user.name;
+            
+            const roleNames = {
+                'police': '👮 Agent de Police',
+                'insurance': '🏢 Agent d\'Assurance', 
+                'transport': '🚛 Agent Transport',
+                'admin': '⚙️ Administrateur',
+                'emergency': '🚨 Accès d\'Urgence'
+            };
+            
+            document.getElementById('userRole').textContent = roleNames[user.role] || user.role;
+        }
+
+        // Charger les plaques récentes
+        function loadQuickPlates() {
+            const history = autoCheck.getHistory().slice(0, 8); // 8 dernières recherches
+            const container = document.getElementById('quickPlates');
+            
+            if (history.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; color: #6b7280; padding: 2rem;">
+                        <svg style="width: 3rem; height: 3rem; margin: 0 auto 1rem; opacity: 0.5;" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                        </svg>
+                        <p>Aucune recherche récente</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = history.map(item => `
+                <div class="quick-plate" onclick="selectQuickPlate('${item.licensePlate}')">
+                    <div style="font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">
+                        ${item.licensePlate}
+                    </div>
+                    <div style="font-size: 0.75rem; color: #6b7280;">
+                        ${item.make} ${item.model}
+                    </div>
+                    <div class="${item.status === 'stolen' ? 'status-stolen' : 'status-safe'}" style="margin-top: 0.5rem; font-size: 0.625rem;">
+                        ${item.status === 'stolen' ? 'VOLÉ' : 'SÉCURISÉ'}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Sélectionner une plaque rapide
+        function selectQuickPlate(plate) {
+            document.getElementById('plateInput').value = plate;
+            document.getElementById('plateInput').focus();
+        }
+
+        // Gestion du formulaire de recherche
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const plateInput = document.getElementById('plateInput');
+            const query = plateInput.value.trim().toUpperCase();
+            
+            if (!query) {
+                autoCheck.showNotification('Champ Requis', 'Veuillez entrer une plaque d\'immatriculation', 'warning');
+                plateInput.focus();
+                return;
+            }
+
+            // Validation du format
+            if (!isValidLicensePlate(query)) {
+                autoCheck.showNotification('Format Invalide', 'Format attendu: AB-123-CD ou AB123CD', 'error');
+                return;
+            }
+
+            await performSearch(query);
+        });
+
+        // Effectuer la recherche
+        async function performSearch(plate) {
+            const searchButton = document.getElementById('searchButton');
+            const searchButtonText = document.getElementById('searchButtonText');
+            const searchSpinner = document.getElementById('searchSpinner');
+            
+            // Afficher le loading
+            searchButton.disabled = true;
+            searchButtonText.style.display = 'none';
+            searchSpinner.style.display = 'inline-block';
+
+            try {
+                // Effectuer la recherche
+                const result = await autoCheck.searchVehicle(plate);
+                
+                // Stocker le résultat pour la page de résultats
+                localStorage.setItem('search_result', JSON.stringify(result));
+                
+                // Naviguer vers les résultats
+                autoCheck.navigateTo('search-result');
+                
+            } catch (error) {
+                console.error('Erreur de recherche:', error);
+                autoCheck.showNotification('Erreur', 'Impossible de traiter la recherche', 'error');
+                
+                // Réinitialiser le bouton
+                searchButton.disabled = false;
+                searchButtonText.style.display = 'inline';
+                searchSpinner.style.display = 'none';
+            }
+        }
+
+        // Valider le format de plaque d'immatriculation
+        function isValidLicensePlate(plate) {
+            // Formats acceptés: AB-123-CD, AB123CD, 123ABC456, etc.
+            const patterns = [
+                /^[A-Z]{2}-?\d{3}-?[A-Z]{2}$/,  // Format français standard
+                /^[A-Z]{2}\d{3}[A-Z]{2}$/,      // Sans tirets
+                /^\d{3}[A-Z]{3}\d{3}$/,          // Format numérique
+                /^[A-Z]\d{4}[A-Z]{2}$/,          // Autres formats
+            ];
+            
+            return patterns.some(pattern => pattern.test(plate));
+        }
+
+        // Formatage automatique de la plaque
+        document.getElementById('plateInput').addEventListener('input', (e) => {
+            let value = e.target.value.replace(/[^A-Z0-9-]/gi, '').toUpperCase();
+            
+            // Formatage automatique pour le format AB-123-CD
+            if (value.length >= 2 && value.length <= 8 && /^[A-Z]{2}\d/.test(value)) {
+                value = value.replace(/^([A-Z]{2})(\d{1,3})([A-Z]{0,2})$/, (match, letters1, numbers, letters2) => {
+                    let formatted = letters1;
+                    if (numbers) formatted += '-' + numbers;
+                    if (letters2) formatted += '-' + letters2;
+                    return formatted;
+                });
+            }
+            
+            e.target.value = value;
+        });
+
+        // Ouvrir la caméra
+        function openCamera() {
+            autoCheck.navigateTo('camera');
+        }
+
+        // Effacer la recherche
+        function clearSearch() {
+            document.getElementById('plateInput').value = '';
+            document.getElementById('plateInput').focus();
+        }
+
+        // Configuration de la reconnaissance vocale
+        function setupVoiceRecognition() {
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                voiceRecognition = new SpeechRecognition();
+                voiceRecognition.continuous = false;
+                voiceRecognition.interimResults = false;
+                voiceRecognition.lang = 'fr-FR';
+
+                voiceRecognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    const cleanedText = transcript.replace(/\s+/g, '').toUpperCase();
+                    
+                    document.getElementById('plateInput').value = cleanedText;
+                    autoCheck.showNotification('Reconnaissance Vocale', `Plaque détectée: ${cleanedText}`, 'success');
+                };
+
+                voiceRecognition.onerror = (event) => {
+                    console.error('Erreur de reconnaissance vocale:', event.error);
+                    autoCheck.showNotification('Erreur Vocale', 'Impossible de reconnaître la voix', 'error');
+                };
+
+                voiceRecognition.onend = () => {
+                    isListening = false;
+                    updateVoiceButton();
+                };
+            }
+        }
+
+        // Démarrer la saisie vocale
+        function startVoiceInput() {
+            if (!voiceRecognition) {
+                autoCheck.showNotification('Non Supporté', 'Reconnaissance vocale non disponible', 'warning');
+                return;
+            }
+
+            if (isListening) {
+                voiceRecognition.stop();
+                return;
+            }
+
+            isListening = true;
+            updateVoiceButton();
+            voiceRecognition.start();
+            autoCheck.showNotification('Écoute Active', 'Dictez la plaque d\'immatriculation', 'info');
+        }
+
+        // Mettre à jour le bouton vocal
+        function updateVoiceButton() {
+            const voiceMethod = document.querySelector('[data-method="voice"]');
+            if (voiceMethod) {
+                if (isListening) {
+                    voiceMethod.style.borderColor = '#dc2626';
+                    voiceMethod.style.backgroundColor = '#fee2e2';
+                } else {
+                    voiceMethod.style.borderColor = '#e5e7eb';
+                    voiceMethod.style.backgroundColor = 'white';
+                }
+            }
+        }
+
+        // Afficher la recherche par lot
+        function showBatchSearch() {
+            autoCheck.showNotification('Fonctionnalité à Venir', 'La recherche multiple sera bientôt disponible', 'info');
+        }
+
+        // Gestion des méthodes de recherche
+        document.querySelectorAll('.search-method').forEach(method => {
+            method.addEventListener('click', () => {
+                // Retirer la classe active de toutes les méthodes
+                document.querySelectorAll('.search-method').forEach(m => m.classList.remove('active'));
+                
+                // Ajouter la classe active à la méthode cliquée
+                method.classList.add('active');
+            });
+        });
+
+        // Raccourcis clavier
+        document.addEventListener('keydown', (e) => {
+            // Ctrl/Cmd + F pour focus sur la recherche
+            if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                e.preventDefault();
+                document.getElementById('plateInput').focus();
+                document.getElementById('plateInput').select();
+            }
+            
+            // F1 pour ouvrir la caméra
+            if (e.key === 'F1') {
+                e.preventDefault();
+                openCamera();
+            }
+            
+            // F2 pour reconnaissance vocale
+            if (e.key === 'F2') {
+                e.preventDefault();
+                startVoiceInput();
+            }
+            
+            // Échap pour effacer
+            if (e.key === 'Escape') {
+                clearSearch();
+            }
+        });
+    </script>
+</body>
+</html>

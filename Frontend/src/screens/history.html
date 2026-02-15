@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoCheck - Historique des Recherches</title>
+    <link href="../output.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- En-tête -->
+    <header class="bg-gray-800 shadow-lg">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button onclick="autoCheck.goBack()" class="text-gray-400 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <h1 class="text-2xl font-bold">📋 Historique des Recherches</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Compteur de recherches -->
+                    <div class="bg-blue-600 px-3 py-1 rounded-full text-sm">
+                        <span id="searchCount">0</span> recherches
+                    </div>
+                    <!-- Options -->
+                    <button onclick="toggleFilterPanel()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v4.586l-4-4V9.414a1 1 0 00-.293-.707L3.293 6.707A1 1 0 013 6V4z"/>
+                        </svg>
+                    </button>
+                    <button onclick="exportHistory()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                    </button>
+                    <button onclick="clearHistory()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Panneau de filtres -->
+    <div id="filterPanel" class="bg-gray-800 shadow-inner transform transition-all duration-300 -translate-y-full opacity-0">
+        <div class="px-6 py-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <!-- Filtre par date -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Période</label>
+                    <select id="dateFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                        <option value="all">Toutes les dates</option>
+                        <option value="today">Aujourd'hui</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois-ci</option>
+                        <option value="custom">Période personnalisée</option>
+                    </select>
+                </div>
+
+                <!-- Filtre par statut -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Statut</label>
+                    <select id="statusFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                        <option value="all">Tous les statuts</option>
+                        <option value="normal">Normal</option>
+                        <option value="volé">Volé</option>
+                        <option value="recherché">Recherché</option>
+                        <option value="non-trouvé">Non trouvé</option>
+                    </select>
+                </div>
+
+                <!-- Filtre par méthode -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Méthode</label>
+                    <select id="methodFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                        <option value="all">Toutes les méthodes</option>
+                        <option value="manual">Saisie manuelle</option>
+                        <option value="voice">Reconnaissance vocale</option>
+                        <option value="camera">Scanner caméra</option>
+                    </select>
+                </div>
+
+                <!-- Recherche textuelle -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Recherche</label>
+                    <input type="text" id="searchFilter" placeholder="Plaque, VIN..." 
+                           class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" 
+                           oninput="applyFilters()">
+                </div>
+            </div>
+
+            <!-- Dates personnalisées -->
+            <div id="customDateRange" class="mt-4 grid grid-cols-2 gap-4" style="display: none;">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Date de début</label>
+                    <input type="date" id="startDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Date de fin</label>
+                    <input type="date" id="endDate" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu principal -->
+    <main class="flex-1 p-6">
+        <!-- Statistiques rapides -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+            <div class="bg-blue-600 rounded-xl p-4">
+                <div class="flex items-center">
+                    <div class="p-2 bg-blue-700 rounded-lg">
+                        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-blue-100">Total Recherches</p>
+                        <p class="text-2xl font-bold" id="totalSearches">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-green-600 rounded-xl p-4">
+                <div class="flex items-center">
+                    <div class="p-2 bg-green-700 rounded-lg">
+                        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-green-100">Véhicules Normaux</p>
+                        <p class="text-2xl font-bold" id="normalVehicles">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-red-600 rounded-xl p-4">
+                <div class="flex items-center">
+                    <div class="p-2 bg-red-700 rounded-lg">
+                        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-red-100">Véhicules Suspects</p>
+                        <p class="text-2xl font-bold" id="suspiciousVehicles">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-purple-600 rounded-xl p-4">
+                <div class="flex items-center">
+                    <div class="p-2 bg-purple-700 rounded-lg">
+                        <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-purple-100">Aujourd'hui</p>
+                        <p class="text-2xl font-bold" id="todaySearches">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liste des recherches -->
+        <div class="bg-gray-800 rounded-xl shadow-lg">
+            <div class="p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold">Recherches Récentes</h2>
+                    <div class="flex items-center space-x-4">
+                        <!-- Tri -->
+                        <select id="sortOrder" class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm" onchange="applyFilters()">
+                            <option value="recent">Plus récentes</option>
+                            <option value="oldest">Plus anciennes</option>
+                            <option value="plate">Par plaque (A-Z)</option>
+                            <option value="status">Par statut</option>
+                        </select>
+
+                        <!-- Vue -->
+                        <div class="flex bg-gray-700 rounded-lg p-1">
+                            <button id="listViewBtn" onclick="switchView('list')" class="px-3 py-1 rounded bg-blue-600 text-white text-sm">Liste</button>
+                            <button id="gridViewBtn" onclick="switchView('grid')" class="px-3 py-1 rounded text-gray-300 hover:text-white text-sm">Grille</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vue Liste -->
+                <div id="listView" class="space-y-4">
+                    <!-- Les recherches seront injectées ici -->
+                </div>
+
+                <!-- Vue Grille -->
+                <div id="gridView" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" style="display: none;">
+                    <!-- Les cartes seront injectées ici -->
+                </div>
+
+                <!-- Message vide -->
+                <div id="emptyState" class="text-center py-12" style="display: none;">
+                    <svg class="w-16 h-16 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    <h3 class="text-lg font-medium text-gray-400 mb-2">Aucune recherche trouvée</h3>
+                    <p class="text-gray-500">Aucun résultat ne correspond aux critères sélectionnés.</p>
+                    <button onclick="resetFilters()" class="mt-4 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-all">
+                        Réinitialiser les filtres
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal de détails -->
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-96 overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xl font-bold">Détails de la Recherche</h3>
+                        <button onclick="closeDetailModal()" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="detailContent">
+                        <!-- Contenu généré dynamiquement -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script>
+        // Variables globales
+        let searchHistory = [];
+        let filteredHistory = [];
+        let currentView = 'list';
+        let filterPanelOpen = false;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSearchHistory();
+            generateDemoData();
+            updateStats();
+            renderHistory();
+        });
+
+        // Charger l'historique depuis le localStorage
+        function loadSearchHistory() {
+            const stored = localStorage.getItem('search_history');
+            if (stored) {
+                searchHistory = JSON.parse(stored);
+            }
+            filteredHistory = [...searchHistory];
+        }
+
+        // Sauvegarder l'historique
+        function saveSearchHistory() {
+            localStorage.setItem('search_history', JSON.stringify(searchHistory));
+        }
+
+        // Générer des données de démonstration
+        function generateDemoData() {
+            if (searchHistory.length === 0) {
+                const plates = ['AB-123-CD', 'EF-456-GH', 'IJ-789-KL', 'MN-012-OP', 'QR-345-ST', 'UV-678-WX'];
+                const statuses = ['normal', 'volé', 'recherché', 'non-trouvé'];
+                const methods = ['manual', 'voice', 'camera'];
+                const makes = ['Peugeot', 'Renault', 'Citroën', 'BMW', 'Mercedes', 'Audi'];
+                
+                for (let i = 0; i < 25; i++) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - Math.floor(Math.random() * 30));
+                    
+                    const randomPlate = plates[Math.floor(Math.random() * plates.length)] + '-' + Math.floor(Math.random() * 1000);
+                    const status = statuses[Math.floor(Math.random() * statuses.length)];
+                    
+                    searchHistory.push({
+                        id: 'search_' + Date.now() + '_' + i,
+                        plate: randomPlate,
+                        vin: 'VF' + Math.random().toString(36).substr(2, 15).toUpperCase(),
+                        status: status,
+                        method: methods[Math.floor(Math.random() * methods.length)],
+                        timestamp: date.toISOString(),
+                        make: makes[Math.floor(Math.random() * makes.length)],
+                        model: 'Modèle ' + Math.floor(Math.random() * 10),
+                        year: 2000 + Math.floor(Math.random() * 23),
+                        alerts: status === 'volé' ? ['Vol déclaré', 'Recherché par police'] : 
+                               status === 'recherché' ? ['Contrôle technique expiré'] : [],
+                        location: 'Paris, France',
+                        duration: Math.floor(Math.random() * 5000) + 1000
+                    });
+                }
+                
+                saveSearchHistory();
+                filteredHistory = [...searchHistory];
+            }
+        }
+
+        // Mettre à jour les statistiques
+        function updateStats() {
+            const totalSearches = searchHistory.length;
+            const normalVehicles = searchHistory.filter(s => s.status === 'normal').length;
+            const suspiciousVehicles = searchHistory.filter(s => ['volé', 'recherché'].includes(s.status)).length;
+            
+            const today = new Date().toISOString().split('T')[0];
+            const todaySearches = searchHistory.filter(s => s.timestamp.split('T')[0] === today).length;
+            
+            document.getElementById('searchCount').textContent = filteredHistory.length;
+            document.getElementById('totalSearches').textContent = totalSearches;
+            document.getElementById('normalVehicles').textContent = normalVehicles;
+            document.getElementById('suspiciousVehicles').textContent = suspiciousVehicles;
+            document.getElementById('todaySearches').textContent = todaySearches;
+        }
+
+        // Basculer le panneau de filtres
+        function toggleFilterPanel() {
+            const panel = document.getElementById('filterPanel');
+            filterPanelOpen = !filterPanelOpen;
+            
+            if (filterPanelOpen) {
+                panel.classList.remove('-translate-y-full', 'opacity-0');
+                panel.classList.add('translate-y-0', 'opacity-100');
+            } else {
+                panel.classList.add('-translate-y-full', 'opacity-0');
+                panel.classList.remove('translate-y-0', 'opacity-100');
+            }
+        }
+
+        // Gérer le filtre de date personnalisé
+        document.getElementById('dateFilter').addEventListener('change', (e) => {
+            const customRange = document.getElementById('customDateRange');
+            if (e.target.value === 'custom') {
+                customRange.style.display = 'grid';
+            } else {
+                customRange.style.display = 'none';
+            }
+        });
+
+        // Appliquer les filtres
+        function applyFilters() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const methodFilter = document.getElementById('methodFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+            const sortOrder = document.getElementById('sortOrder').value;
+            
+            let filtered = [...searchHistory];
+            
+            // Filtre par date
+            if (dateFilter !== 'all') {
+                const now = new Date();
+                let cutoffDate;
+                
+                switch (dateFilter) {
+                    case 'today':
+                        cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        break;
+                    case 'week':
+                        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case 'month':
+                        cutoffDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        break;
+                    case 'custom':
+                        const startDate = document.getElementById('startDate').value;
+                        const endDate = document.getElementById('endDate').value;
+                        if (startDate && endDate) {
+                            filtered = filtered.filter(item => {
+                                const itemDate = new Date(item.timestamp).toISOString().split('T')[0];
+                                return itemDate >= startDate && itemDate <= endDate;
+                            });
+                        }
+                        break;
+                }
+                
+                if (dateFilter !== 'custom') {
+                    filtered = filtered.filter(item => new Date(item.timestamp) >= cutoffDate);
+                }
+            }
+            
+            // Filtre par statut
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(item => item.status === statusFilter);
+            }
+            
+            // Filtre par méthode
+            if (methodFilter !== 'all') {
+                filtered = filtered.filter(item => item.method === methodFilter);
+            }
+            
+            // Recherche textuelle
+            if (searchFilter) {
+                filtered = filtered.filter(item => 
+                    item.plate.toLowerCase().includes(searchFilter) ||
+                    item.vin.toLowerCase().includes(searchFilter) ||
+                    item.make.toLowerCase().includes(searchFilter) ||
+                    item.model.toLowerCase().includes(searchFilter)
+                );
+            }
+            
+            // Tri
+            filtered.sort((a, b) => {
+                switch (sortOrder) {
+                    case 'recent':
+                        return new Date(b.timestamp) - new Date(a.timestamp);
+                    case 'oldest':
+                        return new Date(a.timestamp) - new Date(b.timestamp);
+                    case 'plate':
+                        return a.plate.localeCompare(b.plate);
+                    case 'status':
+                        return a.status.localeCompare(b.status);
+                    default:
+                        return 0;
+                }
+            });
+            
+            filteredHistory = filtered;
+            updateStats();
+            renderHistory();
+        }
+
+        // Changer de vue
+        function switchView(view) {
+            currentView = view;
+            
+            const listView = document.getElementById('listView');
+            const gridView = document.getElementById('gridView');
+            const listBtn = document.getElementById('listViewBtn');
+            const gridBtn = document.getElementById('gridViewBtn');
+            
+            if (view === 'list') {
+                listView.style.display = 'block';
+                gridView.style.display = 'none';
+                listBtn.classList.add('bg-blue-600', 'text-white');
+                listBtn.classList.remove('text-gray-300');
+                gridBtn.classList.remove('bg-blue-600', 'text-white');
+                gridBtn.classList.add('text-gray-300');
+            } else {
+                listView.style.display = 'none';
+                gridView.style.display = 'grid';
+                gridBtn.classList.add('bg-blue-600', 'text-white');
+                gridBtn.classList.remove('text-gray-300');
+                listBtn.classList.remove('bg-blue-600', 'text-white');
+                listBtn.classList.add('text-gray-300');
+            }
+            
+            renderHistory();
+        }
+
+        // Afficher l'historique
+        function renderHistory() {
+            const listView = document.getElementById('listView');
+            const gridView = document.getElementById('gridView');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (filteredHistory.length === 0) {
+                listView.innerHTML = '';
+                gridView.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            if (currentView === 'list') {
+                renderListView(listView);
+            } else {
+                renderGridView(gridView);
+            }
+        }
+
+        // Rendu en liste
+        function renderListView(container) {
+            container.innerHTML = filteredHistory.map(item => `
+                <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-all cursor-pointer" onclick="showDetailsModal('${item.id}')">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-shrink-0">
+                                <div class="w-12 h-12 ${getStatusColor(item.status)} rounded-lg flex items-center justify-center">
+                                    ${getStatusIcon(item.status)}
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-3">
+                                    <h3 class="text-lg font-bold text-white">${item.plate}</h3>
+                                    <span class="px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(item.status)}">
+                                        ${getStatusText(item.status)}
+                                    </span>
+                                    <span class="px-2 py-1 text-xs bg-gray-600 text-gray-300 rounded-full">
+                                        ${getMethodText(item.method)}
+                                    </span>
+                                </div>
+                                <div class="mt-1 flex items-center space-x-4 text-sm text-gray-400">
+                                    <span>${item.make} ${item.model} (${item.year})</span>
+                                    <span>•</span>
+                                    <span>${formatDate(item.timestamp)}</span>
+                                    <span>•</span>
+                                    <span>${item.duration}ms</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            ${item.alerts.length > 0 ? `<span class="text-red-400 text-xs">${item.alerts.length} alerte(s)</span>` : ''}
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Rendu en grille
+        function renderGridView(container) {
+            container.innerHTML = filteredHistory.map(item => `
+                <div class="bg-gray-700 rounded-lg p-4 hover:bg-gray-600 transition-all cursor-pointer" onclick="showDetailsModal('${item.id}')">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="text-lg font-bold text-white">${item.plate}</h3>
+                        <div class="w-8 h-8 ${getStatusColor(item.status)} rounded-lg flex items-center justify-center">
+                            ${getStatusIcon(item.status)}
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Véhicule:</span>
+                            <span class="text-white">${item.make} ${item.model}</span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Statut:</span>
+                            <span class="px-2 py-1 text-xs rounded-full ${getStatusBadgeClass(item.status)}">
+                                ${getStatusText(item.status)}
+                            </span>
+                        </div>
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-400">Date:</span>
+                            <span class="text-white">${formatDate(item.timestamp)}</span>
+                        </div>
+                        ${item.alerts.length > 0 ? `
+                            <div class="text-xs text-red-400 mt-2">
+                                ${item.alerts.length} alerte(s)
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Fonctions utilitaires
+        function getStatusColor(status) {
+            switch (status) {
+                case 'normal': return 'bg-green-600';
+                case 'volé': return 'bg-red-600';
+                case 'recherché': return 'bg-yellow-600';
+                case 'non-trouvé': return 'bg-gray-600';
+                default: return 'bg-gray-600';
+            }
+        }
+
+        function getStatusIcon(status) {
+            switch (status) {
+                case 'normal': 
+                    return '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>';
+                case 'volé':
+                    return '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>';
+                case 'recherché':
+                    return '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>';
+                default:
+                    return '<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>';
+            }
+        }
+
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'normal': return 'bg-green-600 text-green-100';
+                case 'volé': return 'bg-red-600 text-red-100';
+                case 'recherché': return 'bg-yellow-600 text-yellow-100';
+                case 'non-trouvé': return 'bg-gray-600 text-gray-100';
+                default: return 'bg-gray-600 text-gray-100';
+            }
+        }
+
+        function getStatusText(status) {
+            switch (status) {
+                case 'normal': return 'Normal';
+                case 'volé': return 'Volé';
+                case 'recherché': return 'Recherché';
+                case 'non-trouvé': return 'Non trouvé';
+                default: return 'Inconnu';
+            }
+        }
+
+        function getMethodText(method) {
+            switch (method) {
+                case 'manual': return 'Saisie manuelle';
+                case 'voice': return 'Reconnaissance vocale';
+                case 'camera': return 'Scanner caméra';
+                default: return 'Inconnu';
+            }
+        }
+
+        function formatDate(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays === 1) {
+                return 'Aujourd\'hui à ' + date.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'});
+            } else if (diffDays <= 7) {
+                return 'Il y a ' + (diffDays - 1) + ' jour(s)';
+            } else {
+                return date.toLocaleDateString('fr-FR');
+            }
+        }
+
+        // Modal de détails
+        function showDetailsModal(searchId) {
+            const item = searchHistory.find(s => s.id === searchId);
+            if (!item) return;
+            
+            const modal = document.getElementById('detailModal');
+            const content = document.getElementById('detailContent');
+            
+            content.innerHTML = `
+                <div class="space-y-6">
+                    <!-- Informations principales -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Plaque d'immatriculation</label>
+                                <div class="text-xl font-bold text-white bg-gray-700 p-3 rounded-lg text-center font-mono">${item.plate}</div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">VIN</label>
+                                <div class="text-sm text-white bg-gray-700 p-2 rounded font-mono">${item.vin}</div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Statut</label>
+                                <div class="inline-flex px-3 py-1 rounded-full ${getStatusBadgeClass(item.status)}">
+                                    ${getStatusText(item.status)}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Véhicule</label>
+                                <div class="text-white">${item.make} ${item.model} (${item.year})</div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Méthode de recherche</label>
+                                <div class="text-white">${getMethodText(item.method)}</div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Date et heure</label>
+                                <div class="text-white">${new Date(item.timestamp).toLocaleString('fr-FR')}</div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-400 mb-1">Durée de recherche</label>
+                                <div class="text-white">${item.duration}ms</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Alertes -->
+                    ${item.alerts.length > 0 ? `
+                        <div>
+                            <label class="block text-sm font-medium text-gray-400 mb-2">Alertes</label>
+                            <div class="space-y-2">
+                                ${item.alerts.map(alert => `
+                                    <div class="bg-red-900 border border-red-600 p-3 rounded-lg flex items-center">
+                                        <svg class="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                        </svg>
+                                        <span class="text-red-100">${alert}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    <!-- Actions -->
+                    <div class="flex space-x-4 pt-4 border-t border-gray-600">
+                        <button onclick="exportSearchToPDF('${item.id}')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-all">
+                            📄 Exporter en PDF
+                        </button>
+                        <button onclick="repeatSearch('${item.id}')" class="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg transition-all">
+                            🔄 Rechercher à nouveau
+                        </button>
+                        <button onclick="deleteSearch('${item.id}')" class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg transition-all">
+                            🗑️ Supprimer
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            modal.classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detailModal').classList.add('hidden');
+        }
+
+        // Actions sur les recherches
+        function repeatSearch(searchId) {
+            const item = searchHistory.find(s => s.id === searchId);
+            if (item) {
+                localStorage.setItem('repeat_search_plate', item.plate);
+                autoCheck.navigateTo('search');
+            }
+            closeDetailModal();
+        }
+
+        function deleteSearch(searchId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette recherche ?')) {
+                searchHistory = searchHistory.filter(s => s.id !== searchId);
+                saveSearchHistory();
+                applyFilters();
+                closeDetailModal();
+                autoCheck.showNotification('Recherche Supprimée', 'La recherche a été supprimée de l\'historique', 'success');
+            }
+        }
+
+        function exportSearchToPDF(searchId) {
+            const item = searchHistory.find(s => s.id === searchId);
+            if (item) {
+                // Simulation d'export PDF
+                autoCheck.showNotification('Export en cours', 'Génération du rapport PDF...', 'info');
+                
+                setTimeout(() => {
+                    autoCheck.showNotification('Export Terminé', `Rapport pour ${item.plate} généré`, 'success');
+                }, 2000);
+            }
+            closeDetailModal();
+        }
+
+        // Exporter l'historique complet
+        function exportHistory() {
+            const data = filteredHistory.map(item => ({
+                'Plaque': item.plate,
+                'VIN': item.vin,
+                'Statut': getStatusText(item.status),
+                'Véhicule': `${item.make} ${item.model} (${item.year})`,
+                'Méthode': getMethodText(item.method),
+                'Date': new Date(item.timestamp).toLocaleString('fr-FR'),
+                'Durée (ms)': item.duration,
+                'Alertes': item.alerts.join(', ')
+            }));
+            
+            const csv = convertToCSV(data);
+            downloadCSV(csv, 'historique_recherches_' + new Date().toISOString().split('T')[0] + '.csv');
+            
+            autoCheck.showNotification('Export Terminé', `${filteredHistory.length} recherches exportées`, 'success');
+        }
+
+        // Vider l'historique
+        function clearHistory() {
+            if (confirm('Êtes-vous sûr de vouloir vider tout l\'historique ? Cette action est irréversible.')) {
+                searchHistory = [];
+                filteredHistory = [];
+                saveSearchHistory();
+                updateStats();
+                renderHistory();
+                autoCheck.showNotification('Historique Vidé', 'Toutes les recherches ont été supprimées', 'success');
+            }
+        }
+
+        // Réinitialiser les filtres
+        function resetFilters() {
+            document.getElementById('dateFilter').value = 'all';
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('methodFilter').value = 'all';
+            document.getElementById('searchFilter').value = '';
+            document.getElementById('sortOrder').value = 'recent';
+            document.getElementById('customDateRange').style.display = 'none';
+            
+            applyFilters();
+        }
+
+        // Utilitaires CSV
+        function convertToCSV(data) {
+            const headers = Object.keys(data[0]);
+            const rows = data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','));
+            return [headers.join(','), ...rows].join('\n');
+        }
+
+        function downloadCSV(csv, filename) {
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Fermer le modal en cliquant à l'extérieur
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailModal') {
+                closeDetailModal();
+            }
+        });
+    </script>
+</body>
+</html>

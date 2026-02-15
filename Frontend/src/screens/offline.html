@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoCheck - Mode Hors Ligne</title>
+    <link href="../output.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #111827; color: #f3f4f6; min-height: 100vh; }
+
+        .header { background: #1f2937; padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #374151; }
+        .header-left { display: flex; align-items: center; gap: 1rem; }
+        .back-btn { background: none; border: none; color: #9ca3af; cursor: pointer; padding: 0.5rem; border-radius: 0.5rem; transition: all 0.2s; }
+        .back-btn:hover { color: #fff; background: #374151; }
+        .header h1 { font-size: 1.5rem; font-weight: 700; }
+
+        .btn { padding: 0.5rem 1rem; border-radius: 0.5rem; border: none; cursor: pointer; font-size: 0.875rem; font-weight: 500; transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.5rem; color: #fff; }
+        .btn-primary { background: #3b82f6; }
+        .btn-primary:hover { background: #2563eb; }
+        .btn-success { background: #10b981; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #ef4444; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-secondary { background: #4b5563; }
+        .btn-secondary:hover { background: #374151; }
+        .btn-warning { background: #f59e0b; }
+        .btn-warning:hover { background: #d97706; }
+
+        .layout { display: grid; grid-template-columns: 300px 1fr; gap: 0; min-height: calc(100vh - 65px); }
+
+        /* ─── Sidebar ─── */
+        .sidebar { background: #1f2937; padding: 1.5rem; border-right: 1px solid #374151; display: flex; flex-direction: column; gap: 1.5rem; }
+
+        .status-card { background: #111827; border-radius: 0.75rem; padding: 1.25rem; text-align: center; }
+        .status-icon { font-size: 3rem; margin-bottom: 0.75rem; }
+        .status-label { font-size: 0.8rem; color: #9ca3af; }
+        .status-value { font-size: 1.25rem; font-weight: 700; margin-top: 0.25rem; }
+        .status-online .status-value { color: #10b981; }
+        .status-offline .status-value { color: #f59e0b; }
+
+        .connection-indicator { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem; justify-content: center; }
+        .conn-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .conn-dot.online { background: #10b981; box-shadow: 0 0 8px #10b981; animation: pulse-green 2s infinite; }
+        .conn-dot.offline { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; animation: pulse-yellow 2s infinite; }
+
+        @keyframes pulse-green { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes pulse-yellow { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+        .stat-box { background: #111827; border-radius: 0.5rem; padding: 0.75rem; text-align: center; }
+        .stat-box .stat-num { font-size: 1.5rem; font-weight: 700; color: #60a5fa; }
+        .stat-box .stat-lbl { font-size: 0.7rem; color: #6b7280; margin-top: 0.25rem; }
+
+        .sidebar-section { }
+        .sidebar-section h3 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; color: #6b7280; margin-bottom: 0.75rem; font-weight: 600; }
+
+        .last-sync { background: #111827; border-radius: 0.5rem; padding: 0.75rem; font-size: 0.85rem; }
+        .last-sync .lbl { color: #6b7280; font-size: 0.75rem; }
+        .last-sync .val { font-weight: 600; margin-top: 0.15rem; }
+
+        /* ─── Main ─── */
+        .main-content { padding: 2rem; overflow-y: auto; }
+
+        .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+        .section-header h2 { font-size: 1.375rem; font-weight: 700; }
+
+        .card { background: #1f2937; border: 1px solid #374151; border-radius: 0.75rem; margin-bottom: 1.25rem; }
+        .card-header { padding: 1rem 1.25rem; border-bottom: 1px solid #374151; display: flex; align-items: center; justify-content: space-between; }
+        .card-header h3 { font-size: 1rem; font-weight: 600; }
+        .card-body { padding: 1.25rem; }
+
+        /* ─── Toggle Switch (big) ─── */
+        .offline-toggle { display: flex; align-items: center; gap: 1.5rem; }
+        .big-toggle { position: relative; width: 64px; height: 34px; flex-shrink: 0; }
+        .big-toggle input { opacity: 0; width: 0; height: 0; }
+        .big-toggle .slider { position: absolute; inset: 0; background: #4b5563; border-radius: 9999px; cursor: pointer; transition: all 0.3s; }
+        .big-toggle .slider::before { content: ''; position: absolute; left: 3px; bottom: 3px; width: 28px; height: 28px; background: #fff; border-radius: 50%; transition: all 0.3s; }
+        .big-toggle input:checked + .slider { background: #f59e0b; }
+        .big-toggle input:checked + .slider::before { transform: translateX(30px); }
+
+        /* ─── Sync Queue Table ─── */
+        .queue-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .queue-table th { text-align: left; padding: 0.75rem; color: #9ca3af; font-weight: 500; border-bottom: 1px solid #374151; font-size: 0.75rem; text-transform: uppercase; }
+        .queue-table td { padding: 0.75rem; border-bottom: 1px solid rgba(55, 65, 81, 0.5); }
+        .queue-table tr:hover { background: rgba(55, 65, 81, 0.3); }
+
+        .badge { display: inline-flex; align-items: center; padding: 0.15rem 0.6rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; }
+        .badge-pending { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .badge-synced { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .badge-error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .badge-search { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+        .badge-report { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+
+        /* ─── Cached data cards ─── */
+        .cache-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+        .cache-card { background: #111827; border: 1px solid #374151; border-radius: 0.5rem; padding: 1rem; }
+        .cache-card .cc-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .cache-card .cc-title { font-weight: 600; font-size: 0.9rem; }
+        .cache-card .cc-count { font-size: 0.8rem; color: #9ca3af; margin: 0.25rem 0; }
+        .cache-card .cc-size { font-size: 0.75rem; color: #6b7280; }
+        .cache-card .cc-bar { height: 4px; background: #374151; border-radius: 99px; margin-top: 0.5rem; overflow: hidden; }
+        .cache-card .cc-fill { height: 100%; border-radius: 99px; }
+
+        /* ─── Progress bar ─── */
+        .sync-progress { display: none; margin-top: 1rem; }
+        .sync-progress.active { display: block; }
+        .progress-bar { width: 100%; height: 8px; background: #374151; border-radius: 999px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 999px; transition: width 0.5s ease; }
+        .progress-label { margin-top: 0.5rem; font-size: 0.8rem; color: #9ca3af; display: flex; justify-content: space-between; }
+
+        /* ─── Empty state ─── */
+        .empty-queue { text-align: center; padding: 2rem; color: #6b7280; }
+        .empty-queue .eq-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <button class="back-btn" onclick="autoCheck.navigateTo('dashboard')">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <h1>📡 Mode Hors Ligne</h1>
+        </div>
+        <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="exportOfflineData()">📤 Exporter</button>
+            <button class="btn btn-primary" id="syncBtn" onclick="syncNow()">🔄 Synchroniser maintenant</button>
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <!-- Connection Status -->
+            <div class="status-card" id="statusCard">
+                <div class="status-icon" id="statusIcon">🟢</div>
+                <div class="status-label">ÉTAT DE LA CONNEXION</div>
+                <div class="status-value" id="statusText">En Ligne</div>
+                <div class="connection-indicator">
+                    <div class="conn-dot online" id="connDot"></div>
+                    <span style="font-size: 0.8rem; color: #9ca3af;" id="connLabel">Connecté</span>
+                </div>
+            </div>
+
+            <!-- Toggle Mode -->
+            <div style="background: #111827; border-radius: 0.75rem; padding: 1rem;">
+                <div class="offline-toggle">
+                    <label class="big-toggle">
+                        <input type="checkbox" id="offlineToggle" onchange="toggleOfflineMode()">
+                        <span class="slider"></span>
+                    </label>
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9rem;" id="toggleLabel">Mode Hors Ligne</div>
+                        <div style="font-size: 0.75rem; color: #6b7280;">Basculer manuellement</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="sidebar-section">
+                <h3>Statistiques de Cache</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-num" id="statCachedSearches">0</div>
+                        <div class="stat-lbl">Recherches en cache</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-num" id="statPendingSync">0</div>
+                        <div class="stat-lbl">En attente de sync</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-num" id="statSyncErrors">0</div>
+                        <div class="stat-lbl">Erreurs sync</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-num" id="statOfflineOps">0</div>
+                        <div class="stat-lbl">Opérations offline</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Last Sync -->
+            <div class="sidebar-section">
+                <h3>Dernière Synchronisation</h3>
+                <div class="last-sync">
+                    <div class="lbl">Date</div>
+                    <div class="val" id="lastSyncDate">—</div>
+                </div>
+                <div class="last-sync" style="margin-top: 0.5rem;">
+                    <div class="lbl">Durée</div>
+                    <div class="val" id="lastSyncDuration">—</div>
+                </div>
+                <div class="last-sync" style="margin-top: 0.5rem;">
+                    <div class="lbl">Statut</div>
+                    <div class="val" id="lastSyncStatus" style="color: #10b981;">—</div>
+                </div>
+            </div>
+
+            <!-- Auto Sync -->
+            <div style="background: #111827; border-radius: 0.5rem; padding: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+                <div style="font-size: 0.85rem;">Sync automatique</div>
+                <label class="big-toggle" style="width: 48px; height: 26px;">
+                    <input type="checkbox" id="autoSyncToggle" checked>
+                    <span class="slider" style=""></span>
+                </label>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Sync Progress -->
+            <div class="sync-progress" id="syncProgress">
+                <div class="card" style="border-color: #3b82f6;">
+                    <div class="card-body">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                            <div class="spinner" style="width: 20px; height: 20px; border: 3px solid #374151; border-top-color: #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                            <span style="font-weight: 600;" id="syncStatusLabel">Synchronisation en cours...</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="syncFill" style="width: 0%;"></div>
+                        </div>
+                        <div class="progress-label">
+                            <span id="syncDetail">Préparation...</span>
+                            <span id="syncPercent">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cached Data Overview -->
+            <div class="section-header">
+                <h2>📦 Données en Cache</h2>
+                <button class="btn btn-secondary" onclick="refreshCacheInfo()">🔄 Actualiser</button>
+            </div>
+
+            <div class="cache-grid" id="cacheGrid">
+                <!-- Generated by JS -->
+            </div>
+
+            <!-- Sync Queue -->
+            <div class="section-header" style="margin-top: 2rem;">
+                <h2>📋 File d'Attente de Synchronisation</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-secondary" onclick="clearSyncQueue()">🗑️ Vider</button>
+                    <button class="btn btn-success" onclick="retryFailed()">🔁 Réessayer les échecs</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body" style="padding: 0;">
+                    <table class="queue-table">
+                        <thead>
+                            <tr>
+                                <th>Horodatage</th>
+                                <th>Type</th>
+                                <th>Détail</th>
+                                <th>Taille</th>
+                                <th>Statut</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="queueBody">
+                            <!-- Generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Connection History -->
+            <div class="section-header" style="margin-top: 2rem;">
+                <h2>📊 Historique de Connexion</h2>
+            </div>
+
+            <div class="card">
+                <div class="card-body" style="padding: 0;">
+                    <table class="queue-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Événement</th>
+                                <th>Durée</th>
+                                <th>Détails</th>
+                            </tr>
+                        </thead>
+                        <tbody id="connHistoryBody">
+                            <!-- Generated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+
+    <script src="../js/app.js"></script>
+    <script>
+        let isOffline = false;
+        let syncQueue = [];
+        let connectionHistory = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadOfflineState();
+            generateDemoData();
+            renderCacheGrid();
+            renderSyncQueue();
+            renderConnectionHistory();
+            updateStats();
+            startConnectionMonitor();
+        });
+
+        // ─────────── STATE ───────────
+        function loadOfflineState() {
+            isOffline = localStorage.getItem('autocheck_offline') === 'true';
+            document.getElementById('offlineToggle').checked = isOffline;
+            updateConnectionUI();
+
+            const lastSync = localStorage.getItem('autocheck_last_sync');
+            if (lastSync) {
+                const data = JSON.parse(lastSync);
+                document.getElementById('lastSyncDate').textContent = data.date || '—';
+                document.getElementById('lastSyncDuration').textContent = data.duration || '—';
+                document.getElementById('lastSyncStatus').textContent = data.status || '—';
+                document.getElementById('lastSyncStatus').style.color = data.status === 'Réussi' ? '#10b981' : '#f87171';
+            }
+        }
+
+        function toggleOfflineMode() {
+            isOffline = document.getElementById('offlineToggle').checked;
+            localStorage.setItem('autocheck_offline', isOffline);
+            updateConnectionUI();
+
+            if (isOffline) {
+                autoCheck.showNotification('Mode Hors Ligne', 'Application en mode hors ligne. Les données seront synchronisées à la reconnexion.', 'warning');
+                addConnectionEvent('Passage en mode hors ligne', 'Manuel');
+            } else {
+                autoCheck.showNotification('Mode En Ligne', 'Connexion rétablie. Synchronisation automatique...', 'success');
+                addConnectionEvent('Retour en ligne', 'Manuel');
+                if (document.getElementById('autoSyncToggle').checked) {
+                    setTimeout(() => syncNow(), 1000);
+                }
+            }
+        }
+
+        function updateConnectionUI() {
+            const card = document.getElementById('statusCard');
+            const icon = document.getElementById('statusIcon');
+            const text = document.getElementById('statusText');
+            const dot = document.getElementById('connDot');
+            const label = document.getElementById('connLabel');
+            const toggleLbl = document.getElementById('toggleLabel');
+            const syncBtn = document.getElementById('syncBtn');
+
+            if (isOffline) {
+                card.className = 'status-card status-offline';
+                icon.textContent = '🟡';
+                text.textContent = 'Hors Ligne';
+                text.style.color = '#f59e0b';
+                dot.className = 'conn-dot offline';
+                label.textContent = 'Déconnecté';
+                toggleLbl.textContent = 'Mode Hors Ligne Actif';
+                syncBtn.disabled = true;
+                syncBtn.style.opacity = '0.5';
+            } else {
+                card.className = 'status-card status-online';
+                icon.textContent = '🟢';
+                text.textContent = 'En Ligne';
+                text.style.color = '#10b981';
+                dot.className = 'conn-dot online';
+                label.textContent = 'Connecté';
+                toggleLbl.textContent = 'Mode Hors Ligne';
+                syncBtn.disabled = false;
+                syncBtn.style.opacity = '1';
+            }
+        }
+
+        // ─────────── DEMO DATA ───────────
+        function generateDemoData() {
+            const stored = localStorage.getItem('autocheck_sync_queue');
+            if (stored) {
+                syncQueue = JSON.parse(stored);
+            } else {
+                const types = ['Recherche', 'Signalement', 'Rapport', 'Historique'];
+                const statuses = ['pending', 'synced', 'error'];
+                const plates = ['AB-123-CD', 'EF-456-GH', 'IJ-789-KL', 'MN-012-OP', 'QR-345-ST', 'UV-678-WX'];
+
+                for (let i = 0; i < 15; i++) {
+                    const type = types[Math.floor(Math.random() * types.length)];
+                    const status = statuses[Math.floor(Math.random() * statuses.length)];
+                    const date = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000);
+
+                    syncQueue.push({
+                        id: i + 1,
+                        timestamp: date.toISOString(),
+                        type,
+                        detail: type === 'Recherche' ? `Plaque: ${plates[Math.floor(Math.random() * plates.length)]}` :
+                                type === 'Signalement' ? `Véhicule signalé volé` :
+                                type === 'Rapport' ? `Rapport contrôle #${1000 + i}` :
+                                `Mise à jour historique`,
+                        size: Math.floor(Math.random() * 50 + 2) + ' KB',
+                        status
+                    });
+                }
+                localStorage.setItem('autocheck_sync_queue', JSON.stringify(syncQueue));
+            }
+
+            // Connection history demo
+            const events = [
+                { date: formatAgo(10), event: 'Connexion rétablie', duration: '—', detail: 'Automatique' },
+                { date: formatAgo(35), event: 'Synchronisation terminée', duration: '2.3s', detail: '12 éléments synchronisés' },
+                { date: formatAgo(120), event: 'Perte de connexion', duration: '25 min', detail: 'Timeout réseau' },
+                { date: formatAgo(250), event: 'Passage en mode hors ligne', duration: '—', detail: 'Manuel' },
+                { date: formatAgo(600), event: 'Synchronisation terminée', duration: '1.8s', detail: '5 éléments synchronisés' },
+                { date: formatAgo(1500), event: 'Connexion rétablie', duration: '—', detail: 'Automatique' },
+                { date: formatAgo(2000), event: 'Perte de connexion', duration: '12 min', detail: 'Serveur injoignable' }
+            ];
+            connectionHistory = events;
+        }
+
+        function formatAgo(minutes) {
+            const d = new Date(Date.now() - minutes * 60000);
+            return d.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        // ─────────── CACHE GRID ───────────
+        function renderCacheGrid() {
+            const caches = [
+                { icon: '🔍', title: 'Recherches', key: 'search_history', color: '#3b82f6' },
+                { icon: '📋', title: 'Signalements', key: 'reports_data', color: '#8b5cf6' },
+                { icon: '🔔', title: 'Notifications', key: 'notifications_data', color: '#f59e0b' },
+                { icon: '👥', title: 'Utilisateurs', key: 'autocheck_users', color: '#10b981' },
+                { icon: '📡', title: 'File de Sync', key: 'autocheck_sync_queue', color: '#ef4444' },
+                { icon: '⚙️', title: 'Paramètres', key: 'autocheck_settings', color: '#06b6d4' }
+            ];
+
+            const grid = document.getElementById('cacheGrid');
+            grid.innerHTML = caches.map(c => {
+                const data = localStorage.getItem(c.key);
+                const bytes = data ? new Blob([data]).size : 0;
+                let count = 0;
+                try { count = data ? JSON.parse(data).length || 1 : 0; } catch { count = data ? 1 : 0; }
+                const pct = Math.min((bytes / (512 * 1024)) * 100, 100);
+
+                return `
+                    <div class="cache-card">
+                        <div class="cc-icon">${c.icon}</div>
+                        <div class="cc-title">${c.title}</div>
+                        <div class="cc-count">${count} élément(s)</div>
+                        <div class="cc-size">${formatBytes(bytes)}</div>
+                        <div class="cc-bar"><div class="cc-fill" style="width: ${pct}%; background: ${c.color};"></div></div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function refreshCacheInfo() {
+            renderCacheGrid();
+            updateStats();
+            autoCheck.showNotification('Cache', 'Informations de cache actualisées', 'info');
+        }
+
+        // ─────────── SYNC QUEUE TABLE ───────────
+        function renderSyncQueue() {
+            const tbody = document.getElementById('queueBody');
+
+            if (syncQueue.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="6">
+                        <div class="empty-queue">
+                            <div class="eq-icon">✅</div>
+                            <div>Aucun élément en attente de synchronisation</div>
+                        </div>
+                    </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = syncQueue.map(item => {
+                const statusBadge = {
+                    pending: '<span class="badge badge-pending">⏳ En attente</span>',
+                    synced: '<span class="badge badge-synced">✅ Synchronisé</span>',
+                    error: '<span class="badge badge-error">❌ Erreur</span>'
+                }[item.status];
+
+                const typeBadge = {
+                    'Recherche': '<span class="badge badge-search">🔍 Recherche</span>',
+                    'Signalement': '<span class="badge badge-report">🚨 Signalement</span>',
+                    'Rapport': '<span class="badge badge-report">📋 Rapport</span>',
+                    'Historique': '<span class="badge badge-search">📜 Historique</span>'
+                }[item.type] || `<span class="badge">${item.type}</span>`;
+
+                const date = new Date(item.timestamp);
+                const dateStr = date.toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+
+                return `
+                    <tr>
+                        <td style="color: #9ca3af;">${dateStr}</td>
+                        <td>${typeBadge}</td>
+                        <td>${item.detail}</td>
+                        <td style="color: #6b7280;">${item.size}</td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            ${item.status === 'error' ? `<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="retryItem(${item.id})">🔁</button>` : ''}
+                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="removeItem(${item.id})">✕</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ─────────── CONNECTION HISTORY ───────────
+        function renderConnectionHistory() {
+            const tbody = document.getElementById('connHistoryBody');
+            tbody.innerHTML = connectionHistory.map(item => {
+                const icon = item.event.includes('Perte') ? '🔴' :
+                             item.event.includes('rétablie') || item.event.includes('Retour') ? '🟢' :
+                             item.event.includes('Sync') ? '🔄' : '🟡';
+                return `
+                    <tr>
+                        <td style="color: #9ca3af;">${item.date}</td>
+                        <td>${icon} ${item.event}</td>
+                        <td>${item.duration}</td>
+                        <td style="color: #6b7280;">${item.detail}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ─────────── STATS ───────────
+        function updateStats() {
+            const pending = syncQueue.filter(q => q.status === 'pending').length;
+            const errors = syncQueue.filter(q => q.status === 'error').length;
+            const synced = syncQueue.filter(q => q.status === 'synced').length;
+            const history = JSON.parse(localStorage.getItem('search_history') || '[]');
+
+            document.getElementById('statCachedSearches').textContent = history.length;
+            document.getElementById('statPendingSync').textContent = pending;
+            document.getElementById('statSyncErrors').textContent = errors;
+            document.getElementById('statOfflineOps').textContent = syncQueue.length;
+        }
+
+        // ─────────── SYNC ───────────
+        function syncNow() {
+            if (isOffline) {
+                autoCheck.showNotification('Synchronisation', 'Impossible en mode hors ligne', 'error');
+                return;
+            }
+
+            const pendingItems = syncQueue.filter(q => q.status === 'pending' || q.status === 'error');
+            if (pendingItems.length === 0) {
+                autoCheck.showNotification('Synchronisation', 'Aucun élément à synchroniser', 'info');
+                return;
+            }
+
+            // Show progress
+            const progress = document.getElementById('syncProgress');
+            progress.classList.add('active');
+
+            let current = 0;
+            const total = pendingItems.length;
+            const startTime = Date.now();
+
+            const interval = setInterval(() => {
+                current++;
+                const pct = Math.round((current / total) * 100);
+                document.getElementById('syncFill').style.width = pct + '%';
+                document.getElementById('syncPercent').textContent = pct + '%';
+                document.getElementById('syncDetail').textContent = `Synchronisation ${current}/${total} — ${pendingItems[current - 1]?.detail || ''}`;
+
+                // Mark as synced
+                const item = pendingItems[current - 1];
+                if (item) {
+                    const idx = syncQueue.findIndex(q => q.id === item.id);
+                    if (idx !== -1) {
+                        syncQueue[idx].status = Math.random() > 0.1 ? 'synced' : 'error';
+                    }
+                }
+
+                if (current >= total) {
+                    clearInterval(interval);
+                    const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+
+                    document.getElementById('syncStatusLabel').textContent = 'Synchronisation terminée !';
+                    
+                    localStorage.setItem('autocheck_sync_queue', JSON.stringify(syncQueue));
+                    localStorage.setItem('autocheck_last_sync', JSON.stringify({
+                        date: new Date().toLocaleString('fr-FR'),
+                        duration: duration + 's',
+                        status: 'Réussi'
+                    }));
+
+                    // Update UI
+                    renderSyncQueue();
+                    updateStats();
+                    loadOfflineState();
+                    addConnectionEvent('Synchronisation terminée', `${total} éléments traités en ${duration}s`);
+                    renderConnectionHistory();
+
+                    autoCheck.showNotification('Synchronisation', `${total} éléments synchronisés en ${duration}s`, 'success');
+
+                    setTimeout(() => {
+                        progress.classList.remove('active');
+                        document.getElementById('syncFill').style.width = '0%';
+                        document.getElementById('syncPercent').textContent = '0%';
+                        document.getElementById('syncStatusLabel').textContent = 'Synchronisation en cours...';
+                    }, 3000);
+                }
+            }, 500);
+        }
+
+        function retryFailed() {
+            const failed = syncQueue.filter(q => q.status === 'error');
+            if (failed.length === 0) {
+                autoCheck.showNotification('Sync', 'Aucun échec à réessayer', 'info');
+                return;
+            }
+            failed.forEach(item => {
+                const idx = syncQueue.findIndex(q => q.id === item.id);
+                if (idx !== -1) syncQueue[idx].status = 'pending';
+            });
+            localStorage.setItem('autocheck_sync_queue', JSON.stringify(syncQueue));
+            renderSyncQueue();
+            updateStats();
+            autoCheck.showNotification('Sync', `${failed.length} éléments remis en attente`, 'info');
+        }
+
+        function retryItem(id) {
+            const idx = syncQueue.findIndex(q => q.id === id);
+            if (idx !== -1) {
+                syncQueue[idx].status = 'pending';
+                localStorage.setItem('autocheck_sync_queue', JSON.stringify(syncQueue));
+                renderSyncQueue();
+                updateStats();
+            }
+        }
+
+        function removeItem(id) {
+            syncQueue = syncQueue.filter(q => q.id !== id);
+            localStorage.setItem('autocheck_sync_queue', JSON.stringify(syncQueue));
+            renderSyncQueue();
+            updateStats();
+        }
+
+        function clearSyncQueue() {
+            if (confirm('Vider toute la file d\'attente de synchronisation ?')) {
+                syncQueue = [];
+                localStorage.setItem('autocheck_sync_queue', JSON.stringify(syncQueue));
+                renderSyncQueue();
+                updateStats();
+                autoCheck.showNotification('Sync', 'File d\'attente vidée', 'success');
+            }
+        }
+
+        // ─────────── CONNECTION EVENTS ───────────
+        function addConnectionEvent(event, detail) {
+            connectionHistory.unshift({
+                date: new Date().toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                event,
+                duration: '—',
+                detail
+            });
+            if (connectionHistory.length > 20) connectionHistory.pop();
+        }
+
+        // ─────────── MONITOR ───────────
+        function startConnectionMonitor() {
+            window.addEventListener('online', () => {
+                if (isOffline) return;
+                updateConnectionUI();
+                addConnectionEvent('Connexion rétablie', 'Automatique');
+                renderConnectionHistory();
+                autoCheck.showNotification('Réseau', 'Connexion Internet rétablie', 'success');
+            });
+
+            window.addEventListener('offline', () => {
+                isOffline = true;
+                document.getElementById('offlineToggle').checked = true;
+                localStorage.setItem('autocheck_offline', 'true');
+                updateConnectionUI();
+                addConnectionEvent('Perte de connexion', 'Détection automatique');
+                renderConnectionHistory();
+                autoCheck.showNotification('Réseau', 'Connexion Internet perdue. Mode hors ligne activé.', 'warning');
+            });
+        }
+
+        // ─────────── EXPORT ───────────
+        function exportOfflineData() {
+            const data = {
+                exportDate: new Date().toISOString(),
+                syncQueue,
+                connectionHistory,
+                cachedSearches: JSON.parse(localStorage.getItem('search_history') || '[]'),
+                settings: JSON.parse(localStorage.getItem('autocheck_settings') || '{}')
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `autocheck_offline_export_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            autoCheck.showNotification('Export', 'Données hors ligne exportées avec succès', 'success');
+        }
+
+        // ─────────── HELPERS ───────────
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+    </script>
+</body>
+</html>

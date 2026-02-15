@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoCheck - Notifications et Alertes</title>
+    <link href="../output.css" rel="stylesheet">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- En-tête -->
+    <header class="bg-gray-800 shadow-lg">
+        <div class="px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button onclick="autoCheck.goBack()" class="text-gray-400 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <h1 class="text-2xl font-bold">🔔 Notifications et Alertes</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- Badge de notifications non lues -->
+                    <div class="relative">
+                        <svg class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h4.586l.707-.707A1 1 0 0010 13h4.586l.707.707A1 1 0 0016 14h-4.586l-.707.707A1 1 0 0010 15H4a1 1 0 01-.707-1.707L4 12.586V8a6 6 0 0112 0v4.586l.707.707A1 1 0 0116 14z"/>
+                        </svg>
+                        <span id="unreadBadge" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">5</span>
+                    </div>
+                    <!-- Actions -->
+                    <button onclick="testNotification()" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg transition-all">
+                        🧪 Test Notification
+                    </button>
+                    <button onclick="markAllAsRead()" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition-all">
+                        ✅ Tout marquer lu
+                    </button>
+                    <button onclick="clearAllNotifications()" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition-all">
+                        🗑️ Tout supprimer
+                    </button>
+                    <button onclick="showNotificationSettings()" class="bg-gray-600 hover:bg-gray-500 px-4 py-2 rounded-lg transition-all">
+                        ⚙️ Paramètres
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-80 bg-gray-800 p-6">
+            <!-- Statistiques rapides -->
+            <div class="mb-6">
+                <h2 class="text-xl font-bold mb-4">📊 Résumé</h2>
+                <div class="space-y-4">
+                    <div class="bg-blue-600 rounded-xl p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-blue-100 text-sm">Non lues</p>
+                                <p class="text-2xl font-bold" id="unreadCount">5</p>
+                            </div>
+                            <svg class="w-8 h-8 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="bg-red-600 rounded-xl p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-red-100 text-sm">Alertes Critiques</p>
+                                <p class="text-2xl font-bold" id="criticalCount">2</p>
+                            </div>
+                            <svg class="w-8 h-8 text-red-200" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-600 rounded-xl p-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-yellow-100 text-sm">Avertissements</p>
+                                <p class="text-2xl font-bold" id="warningCount">8</p>
+                            </div>
+                            <svg class="w-8 h-8 text-yellow-200" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtres -->
+            <div class="mb-6">
+                <h2 class="text-xl font-bold mb-4">🔍 Filtres</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Type</label>
+                        <select id="typeFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                            <option value="all">Tous les types</option>
+                            <option value="critical">🔴 Critique</option>
+                            <option value="warning">🟡 Avertissement</option>
+                            <option value="info">🔵 Information</option>
+                            <option value="success">🟢 Succès</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Statut</label>
+                        <select id="statusFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                            <option value="all">Tous les statuts</option>
+                            <option value="unread">Non lues</option>
+                            <option value="read">Lues</option>
+                            <option value="archived">Archivées</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Catégorie</label>
+                        <select id="categoryFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                            <option value="all">Toutes les catégories</option>
+                            <option value="vehicle">Véhicule</option>
+                            <option value="system">Système</option>
+                            <option value="security">Sécurité</option>
+                            <option value="user">Utilisateur</option>
+                            <option value="report">Signalement</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Période</label>
+                        <select id="periodFilter" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                            <option value="all">Toutes les périodes</option>
+                            <option value="today">Aujourd'hui</option>
+                            <option value="week">Cette semaine</option>
+                            <option value="month">Ce mois-ci</option>
+                        </select>
+                    </div>
+
+                    <button onclick="resetFilters()" class="w-full bg-gray-600 hover:bg-gray-500 py-2 px-4 rounded-lg transition-all">
+                        Réinitialiser
+                    </button>
+                </div>
+            </div>
+
+            <!-- Paramètres rapides -->
+            <div>
+                <h2 class="text-xl font-bold mb-4">⚙️ Paramètres Rapides</h2>
+                <div class="space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Sons</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="soundEnabled" class="sr-only peer" checked onchange="toggleSound()">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Notifications Desktop</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="desktopEnabled" class="sr-only peer" checked onchange="toggleDesktopNotifications()">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm">Auto-actualisation</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="autoRefresh" class="sr-only peer" checked onchange="toggleAutoRefresh()">
+                            <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Contenu principal -->
+        <main class="flex-1 p-6">
+            <!-- Barre de recherche -->
+            <div class="mb-6">
+                <div class="flex items-center space-x-4">
+                    <div class="flex-1 relative">
+                        <input type="text" id="searchInput" placeholder="Rechercher dans les notifications..." 
+                               class="w-full bg-gray-800 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-white"
+                               oninput="applyFilters()">
+                        <svg class="absolute left-3 top-2.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <select id="sortOrder" class="bg-gray-800 border border-gray-600 rounded-lg px-3 py-2 text-white" onchange="applyFilters()">
+                        <option value="recent">Plus récentes</option>
+                        <option value="oldest">Plus anciennes</option>
+                        <option value="priority">Par priorité</option>
+                        <option value="category">Par catégorie</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Liste des notifications -->
+            <div class="bg-gray-800 rounded-xl shadow-lg">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-xl font-bold">Notifications</h2>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm text-gray-400" id="notificationCount">0 notifications</span>
+                            <button onclick="refreshNotifications()" class="text-gray-400 hover:text-white transition-colors">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Liste des notifications -->
+                    <div id="notificationsList" class="space-y-3">
+                        <!-- Chargé dynamiquement -->
+                    </div>
+
+                    <!-- État vide -->
+                    <div id="emptyState" class="text-center py-12" style="display: none;">
+                        <svg class="w-16 h-16 text-gray-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-5 5v-5zM4 16l4-4m0 0l4 4m-4-4v12"/>
+                        </svg>
+                        <h3 class="text-lg font-medium text-gray-400 mb-2">Aucune notification</h3>
+                        <p class="text-gray-500">Toutes les notifications ont été lues ou supprimées.</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal paramètres notifications -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-screen overflow-y-auto">
+                <div class="p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xl font-bold">⚙️ Paramètres des Notifications</h3>
+                        <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-white">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Notifications générales -->
+                        <div>
+                            <h4 class="text-lg font-semibold mb-4">🔔 Notifications Générales</h4>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium">Notifications sur le bureau</div>
+                                        <div class="text-sm text-gray-400">Afficher les notifications Windows</div>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium">Sons de notification</div>
+                                        <div class="text-sm text-gray-400">Jouer un son lors des alertes</div>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium">Auto-actualisation</div>
+                                        <div class="text-sm text-gray-400">Actualiser automatiquement toutes les 30s</div>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Types de notifications -->
+                        <div>
+                            <h4 class="text-lg font-semibold mb-4">📢 Types de Notifications</h4>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium">🔴 Alertes Critiques</div>
+                                        <div class="text-sm text-gray-400">Véhicules volés, menaces sécuritaires</div>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium">🟡 Avertissements</div>
+                                        <div class="text-sm text-gray-400">Contrôles techniques, infractions</div>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-yellow-600"></div>
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium">🔵 Informations</div>
+                                        <div class="text-sm text-gray-400">Mises à jour système, statistiques</div>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="font-medium">🟢 Succès</div>
+                                        <div class="text-sm text-gray-400">Confirmations d'actions, résolutions</div>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer" checked>
+                                        <div class="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Paramètres avancés -->
+                        <div>
+                            <h4 class="text-lg font-semibold mb-4">🔧 Paramètres Avancés</h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Rétention des notifications (jours)</label>
+                                    <select class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                        <option value="7">7 jours</option>
+                                        <option value="14">14 jours</option>
+                                        <option value="30" selected>30 jours</option>
+                                        <option value="90">90 jours</option>
+                                        <option value="365">1 an</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label class="block text-sm font-medium mb-2">Fréquence d'actualisation</label>
+                                    <select class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white">
+                                        <option value="10">10 secondes</option>
+                                        <option value="30" selected>30 secondes</option>
+                                        <option value="60">1 minute</option>
+                                        <option value="300">5 minutes</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="flex justify-end space-x-4 pt-4 border-t border-gray-600">
+                            <button onclick="resetNotificationSettings()" class="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg transition-all">
+                                Réinitialiser
+                            </button>
+                            <button onclick="saveNotificationSettings()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-all">
+                                Enregistrer
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/app.js"></script>
+    <script>
+        // Variables globales
+        let notifications = [];
+        let filteredNotifications = [];
+        let autoRefreshInterval = null;
+        let soundEnabled = true;
+        let desktopEnabled = true;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotifications();
+            generateDemoNotifications();
+            updateStats();
+            renderNotifications();
+            startAutoRefresh();
+            requestNotificationPermission();
+        });
+
+        // Charger les notifications
+        function loadNotifications() {
+            const stored = localStorage.getItem('notifications_data');
+            if (stored) {
+                notifications = JSON.parse(stored);
+            }
+            filteredNotifications = [...notifications];
+        }
+
+        // Sauvegarder les notifications
+        function saveNotifications() {
+            localStorage.setItem('notifications_data', JSON.stringify(notifications));
+        }
+
+        // Générer des notifications de démonstration
+        function generateDemoNotifications() {
+            if (notifications.length === 0) {
+                const types = ['critical', 'warning', 'info', 'success'];
+                const categories = ['vehicle', 'system', 'security', 'user', 'report'];
+                const plates = ['AB-123-CD', 'EF-456-GH', 'IJ-789-KL'];
+                
+                const demoNotifs = [
+                    {
+                        type: 'critical',
+                        category: 'security',
+                        title: 'Véhicule Volé Détecté',
+                        message: 'Le véhicule AB-123-CD signalé volé a été détecté par le scanner automatique.',
+                        plate: 'AB-123-CD',
+                        location: 'Paris 15e',
+                        actions: ['Voir Détails', 'Contacter Police']
+                    },
+                    {
+                        type: 'warning', 
+                        category: 'vehicle',
+                        title: 'Contrôle Technique Expiré',
+                        message: 'Le véhicule EF-456-GH a un contrôle technique expiré depuis 3 mois.',
+                        plate: 'EF-456-GH',
+                        actions: ['Voir Véhicule', 'Signaler']
+                    },
+                    {
+                        type: 'info',
+                        category: 'system',
+                        title: 'Mise à Jour Disponible',
+                        message: 'Une nouvelle version d\'AutoCheck est disponible (v2.1.5).',
+                        actions: ['Télécharger', 'Plus Tard']
+                    },
+                    {
+                        type: 'success',
+                        category: 'report',
+                        title: 'Signalement Résolu',
+                        message: 'Le signalement RPT-2024-001 a été marqué comme résolu.',
+                        actions: ['Voir Rapport']
+                    },
+                    {
+                        type: 'critical',
+                        category: 'security',
+                        title: 'Tentative d\'Accès Suspect',
+                        message: 'Plusieurs tentatives de connexion échouées détectées depuis IP 192.168.1.100.',
+                        location: 'Système',
+                        actions: ['Bloquer IP', 'Voir Logs']
+                    }
+                ];
+                
+                demoNotifs.forEach((notif, index) => {
+                    const date = new Date();
+                    date.setMinutes(date.getMinutes() - (index * 15));
+                    
+                    notifications.push({
+                        id: 'NOTIF-' + Date.now() + '-' + index,
+                        ...notif,
+                        timestamp: date.toISOString(),
+                        read: Math.random() > 0.7,
+                        archived: false,
+                        priority: notif.type === 'critical' ? 'high' : 'normal'
+                    });
+                });
+                
+                // Ajouter quelques notifications supplémentaires
+                for (let i = 0; i < 10; i++) {
+                    const date = new Date();
+                    date.setHours(date.getHours() - Math.floor(Math.random() * 24));
+                    
+                    notifications.push({
+                        id: 'NOTIF-' + Date.now() + '-AUTO-' + i,
+                        type: types[Math.floor(Math.random() * types.length)],
+                        category: categories[Math.floor(Math.random() * categories.length)],
+                        title: 'Notification Automatique #' + (i + 1),
+                        message: 'Message de notification automatique généré pour les tests.',
+                        timestamp: date.toISOString(),
+                        read: Math.random() > 0.5,
+                        archived: false,
+                        priority: 'normal',
+                        actions: ['Action']
+                    });
+                }
+                
+                saveNotifications();
+                filteredNotifications = [...notifications];
+            }
+        }
+
+        // Mettre à jour les statistiques
+        function updateStats() {
+            const unreadCount = notifications.filter(n => !n.read && !n.archived).length;
+            const criticalCount = notifications.filter(n => n.type === 'critical' && !n.read).length;
+            const warningCount = notifications.filter(n => n.type === 'warning' && !n.read).length;
+            
+            document.getElementById('unreadCount').textContent = unreadCount;
+            document.getElementById('unreadBadge').textContent = unreadCount;
+            document.getElementById('criticalCount').textContent = criticalCount;
+            document.getElementById('warningCount').textContent = warningCount;
+            document.getElementById('notificationCount').textContent = `${filteredNotifications.length} notification(s)`;
+            
+            // Masquer le badge si pas de non-lues
+            document.getElementById('unreadBadge').style.display = unreadCount > 0 ? 'flex' : 'none';
+        }
+
+        // Appliquer les filtres
+        function applyFilters() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const periodFilter = document.getElementById('periodFilter').value;
+            const searchInput = document.getElementById('searchInput').value.toLowerCase();
+            const sortOrder = document.getElementById('sortOrder').value;
+            
+            let filtered = [...notifications];
+            
+            // Filtres
+            if (typeFilter !== 'all') {
+                filtered = filtered.filter(n => n.type === typeFilter);
+            }
+            
+            if (statusFilter !== 'all') {
+                if (statusFilter === 'unread') {
+                    filtered = filtered.filter(n => !n.read);
+                } else if (statusFilter === 'read') {
+                    filtered = filtered.filter(n => n.read);
+                } else if (statusFilter === 'archived') {
+                    filtered = filtered.filter(n => n.archived);
+                }
+            }
+            
+            if (categoryFilter !== 'all') {
+                filtered = filtered.filter(n => n.category === categoryFilter);
+            }
+            
+            // Filtre de période
+            if (periodFilter !== 'all') {
+                const now = new Date();
+                let cutoffDate;
+                
+                switch (periodFilter) {
+                    case 'today':
+                        cutoffDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        break;
+                    case 'week':
+                        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case 'month':
+                        cutoffDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                        break;
+                }
+                
+                if (cutoffDate) {
+                    filtered = filtered.filter(n => new Date(n.timestamp) >= cutoffDate);
+                }
+            }
+            
+            // Recherche textuelle
+            if (searchInput) {
+                filtered = filtered.filter(n => 
+                    n.title.toLowerCase().includes(searchInput) ||
+                    n.message.toLowerCase().includes(searchInput) ||
+                    (n.plate && n.plate.toLowerCase().includes(searchInput))
+                );
+            }
+            
+            // Tri
+            filtered.sort((a, b) => {
+                switch (sortOrder) {
+                    case 'recent':
+                        return new Date(b.timestamp) - new Date(a.timestamp);
+                    case 'oldest':
+                        return new Date(a.timestamp) - new Date(b.timestamp);
+                    case 'priority':
+                        const priorityOrder = { 'high': 0, 'normal': 1 };
+                        return priorityOrder[a.priority] - priorityOrder[b.priority];
+                    case 'category':
+                        return a.category.localeCompare(b.category);
+                    default:
+                        return 0;
+                }
+            });
+            
+            filteredNotifications = filtered;
+            updateStats();
+            renderNotifications();
+        }
+
+        // Afficher les notifications
+        function renderNotifications() {
+            const container = document.getElementById('notificationsList');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (filteredNotifications.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            container.innerHTML = filteredNotifications.map(notif => `
+                <div class="notification-item ${notif.read ? 'read' : 'unread'} ${notif.archived ? 'archived' : ''} p-4 rounded-lg border-l-4 ${getNotificationBorderClass(notif.type)} ${getNotificationBgClass(notif.type)} transition-all hover:shadow-lg" 
+                     data-id="${notif.id}">
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start space-x-3 flex-1">
+                            <!-- Icône -->
+                            <div class="flex-shrink-0 mt-1">
+                                <div class="w-8 h-8 rounded-full ${getNotificationIconBg(notif.type)} flex items-center justify-center">
+                                    ${getNotificationIcon(notif.type)}
+                                </div>
+                            </div>
+                            
+                            <!-- Contenu -->
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <h4 class="font-semibold text-white ${notif.read ? 'opacity-75' : ''}">${notif.title}</h4>
+                                    <span class="px-2 py-1 text-xs rounded-full ${getCategoryClass(notif.category)}">
+                                        ${getCategoryText(notif.category)}
+                                    </span>
+                                    ${!notif.read ? '<div class="w-2 h-2 bg-blue-500 rounded-full"></div>' : ''}
+                                </div>
+                                
+                                <p class="text-gray-300 text-sm mb-2 ${notif.read ? 'opacity-75' : ''}">${notif.message}</p>
+                                
+                                <div class="flex items-center space-x-4 text-xs text-gray-400">
+                                    <span>${formatNotificationDate(notif.timestamp)}</span>
+                                    ${notif.plate ? `<span>📋 ${notif.plate}</span>` : ''}
+                                    ${notif.location ? `<span>📍 ${notif.location}</span>` : ''}
+                                </div>
+                                
+                                <!-- Actions -->
+                                ${notif.actions && notif.actions.length > 0 ? `
+                                    <div class="flex items-center space-x-2 mt-3">
+                                        ${notif.actions.map(action => `
+                                            <button onclick="executeNotificationAction('${notif.id}', '${action}')" 
+                                                    class="px-3 py-1 text-xs bg-gray-600 hover:bg-gray-500 rounded transition-all">
+                                                ${action}
+                                            </button>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        
+                        <!-- Menu actions -->
+                        <div class="flex items-center space-x-2 ml-4">
+                            <button onclick="toggleNotificationRead('${notif.id}')" 
+                                    class="text-gray-400 hover:text-white transition-colors" 
+                                    title="${notif.read ? 'Marquer non lue' : 'Marquer lue'}">
+                                ${notif.read ? 
+                                    '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 7.89a2 2 0 002.83 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>' :
+                                    '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>'
+                                }
+                            </button>
+                            <button onclick="archiveNotification('${notif.id}')" 
+                                    class="text-gray-400 hover:text-white transition-colors" 
+                                    title="Archiver">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8l6 6 6-6"/>
+                                </svg>
+                            </button>
+                            <button onclick="deleteNotification('${notif.id}')" 
+                                    class="text-gray-400 hover:text-red-400 transition-colors" 
+                                    title="Supprimer">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1H8a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Fonctions utilitaires
+        function getNotificationBorderClass(type) {
+            const classes = {
+                critical: 'border-red-500',
+                warning: 'border-yellow-500', 
+                info: 'border-blue-500',
+                success: 'border-green-500'
+            };
+            return classes[type] || classes.info;
+        }
+
+        function getNotificationBgClass(type) {
+            const classes = {
+                critical: 'bg-red-900 bg-opacity-20',
+                warning: 'bg-yellow-900 bg-opacity-20',
+                info: 'bg-blue-900 bg-opacity-20',
+                success: 'bg-green-900 bg-opacity-20'
+            };
+            return classes[type] || classes.info;
+        }
+
+        function getNotificationIconBg(type) {
+            const classes = {
+                critical: 'bg-red-600',
+                warning: 'bg-yellow-600',
+                info: 'bg-blue-600', 
+                success: 'bg-green-600'
+            };
+            return classes[type] || classes.info;
+        }
+
+        function getNotificationIcon(type) {
+            const icons = {
+                critical: '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>',
+                warning: '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>',
+                info: '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>',
+                success: '<svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>'
+            };
+            return icons[type] || icons.info;
+        }
+
+        function getCategoryClass(category) {
+            const classes = {
+                vehicle: 'bg-blue-600 text-blue-100',
+                system: 'bg-purple-600 text-purple-100',
+                security: 'bg-red-600 text-red-100',
+                user: 'bg-green-600 text-green-100',
+                report: 'bg-yellow-600 text-yellow-100'
+            };
+            return classes[category] || 'bg-gray-600 text-gray-100';
+        }
+
+        function getCategoryText(category) {
+            const texts = {
+                vehicle: 'Véhicule',
+                system: 'Système',
+                security: 'Sécurité',
+                user: 'Utilisateur',
+                report: 'Signalement'
+            };
+            return texts[category] || 'Général';
+        }
+
+        function formatNotificationDate(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diffTime = Math.abs(now - date);
+            const diffMinutes = Math.floor(diffTime / (1000 * 60));
+            const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffMinutes < 1) {
+                return 'À l\'instant';
+            } else if (diffMinutes < 60) {
+                return `Il y a ${diffMinutes} min`;
+            } else if (diffHours < 24) {
+                return `Il y a ${diffHours}h`;
+            } else if (diffDays < 7) {
+                return `Il y a ${diffDays}j`;
+            } else {
+                return date.toLocaleDateString('fr-FR');
+            }
+        }
+
+        // Actions sur les notifications
+        function toggleNotificationRead(notificationId) {
+            const notif = notifications.find(n => n.id === notificationId);
+            if (notif) {
+                notif.read = !notif.read;
+                saveNotifications();
+                applyFilters();
+            }
+        }
+
+        function archiveNotification(notificationId) {
+            const notif = notifications.find(n => n.id === notificationId);
+            if (notif) {
+                notif.archived = true;
+                notif.read = true;
+                saveNotifications();
+                applyFilters();
+                autoCheck.showNotification('Notification Archivée', 'La notification a été archivée', 'success');
+            }
+        }
+
+        function deleteNotification(notificationId) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette notification ?')) {
+                notifications = notifications.filter(n => n.id !== notificationId);
+                saveNotifications();
+                applyFilters();
+                autoCheck.showNotification('Notification Supprimée', 'La notification a été supprimée', 'success');
+            }
+        }
+
+        function executeNotificationAction(notificationId, action) {
+            const notif = notifications.find(n => n.id === notificationId);
+            if (!notif) return;
+            
+            // Marquer comme lue quand action exécutée
+            notif.read = true;
+            saveNotifications();
+            
+            // Exécuter l'action
+            switch (action) {
+                case 'Voir Détails':
+                case 'Voir Véhicule':
+                    if (notif.plate) {
+                        localStorage.setItem('search_plate', notif.plate);
+                        autoCheck.navigateTo('search');
+                    }
+                    break;
+                case 'Contacter Police':
+                    autoCheck.showNotification('Contact Police', 'Numéro d\'urgence: 17', 'info');
+                    break;
+                case 'Télécharger':
+                    autoCheck.showNotification('Téléchargement', 'Mise à jour en cours...', 'info');
+                    break;
+                case 'Voir Rapport':
+                    autoCheck.navigateTo('reports');
+                    break;
+                default:
+                    autoCheck.showNotification('Action', `Action "${action}" exécutée`, 'info');
+            }
+            
+            applyFilters();
+        }
+
+        // Actions globales
+        function markAllAsRead() {
+            notifications.forEach(n => n.read = true);
+            saveNotifications();
+            applyFilters();
+            autoCheck.showNotification('Notifications Lues', 'Toutes les notifications ont été marquées comme lues', 'success');
+        }
+
+        function clearAllNotifications() {
+            if (confirm('Êtes-vous sûr de vouloir supprimer toutes les notifications ?')) {
+                notifications = [];
+                saveNotifications();
+                applyFilters();
+                autoCheck.showNotification('Notifications Supprimées', 'Toutes les notifications ont été supprimées', 'success');
+            }
+        }
+
+        function testNotification() {
+            const testNotif = {
+                id: 'TEST-' + Date.now(),
+                type: 'info',
+                category: 'system', 
+                title: 'Notification de Test',
+                message: 'Ceci est une notification de test pour vérifier le bon fonctionnement du système.',
+                timestamp: new Date().toISOString(),
+                read: false,
+                archived: false,
+                priority: 'normal',
+                actions: ['OK']
+            };
+            
+            notifications.unshift(testNotif);
+            saveNotifications();
+            applyFilters();
+            
+            // Notification système si autorisée
+            if (desktopEnabled && Notification.permission === 'granted') {
+                new Notification('AutoCheck - Test', {
+                    body: testNotif.message,
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🚗</text></svg>'
+                });
+            }
+            
+            // Son si activé
+            if (soundEnabled) {
+                playNotificationSound('info');
+            }
+        }
+
+        function refreshNotifications() {
+            applyFilters();
+            autoCheck.showNotification('Actualisé', 'Notifications mises à jour', 'success');
+        }
+
+        function resetFilters() {
+            document.getElementById('typeFilter').value = 'all';
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('categoryFilter').value = 'all';
+            document.getElementById('periodFilter').value = 'all';
+            document.getElementById('searchInput').value = '';
+            document.getElementById('sortOrder').value = 'recent';
+            applyFilters();
+        }
+
+        // Gestion des sons
+        function toggleSound() {
+            soundEnabled = document.getElementById('soundEnabled').checked;
+            localStorage.setItem('notification_sound_enabled', soundEnabled);
+        }
+
+        function toggleDesktopNotifications() {
+            desktopEnabled = document.getElementById('desktopEnabled').checked;
+            localStorage.setItem('desktop_notifications_enabled', desktopEnabled);
+            
+            if (desktopEnabled) {
+                requestNotificationPermission();
+            }
+        }
+
+        function toggleAutoRefresh() {
+            const enabled = document.getElementById('autoRefresh').checked;
+            localStorage.setItem('auto_refresh_enabled', enabled);
+            
+            if (enabled) {
+                startAutoRefresh();
+            } else {
+                stopAutoRefresh();
+            }
+        }
+
+        function playNotificationSound(type) {
+            if (!soundEnabled) return;
+            
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            // Fréquences selon le type
+            const frequencies = {
+                critical: [800, 1000, 1200],
+                warning: [600, 800],
+                info: [500, 700],
+                success: [400, 600, 800]
+            };
+            
+            const freqs = frequencies[type] || frequencies.info;
+            
+            freqs.forEach((freq, i) => {
+                setTimeout(() => {
+                    oscillator.frequency.setValueAtTime(freq, audioContext.currentTime);
+                    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                }, i * 100);
+            });
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + (freqs.length * 0.1));
+        }
+
+        // Auto-actualisation
+        function startAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+            }
+            
+            autoRefreshInterval = setInterval(() => {
+                // Simuler de nouvelles notifications occasionnellement
+                if (Math.random() < 0.1) {
+                    generateRandomNotification();
+                }
+            }, 30000); // 30 secondes
+        }
+
+        function stopAutoRefresh() {
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+        }
+
+        function generateRandomNotification() {
+            const types = ['info', 'warning'];
+            const categories = ['system', 'vehicle'];
+            const messages = [
+                'Nouvelle recherche effectuée',
+                'Mise à jour automatique',
+                'Synchronisation terminée',
+                'Contrôle de sécurité effectué'
+            ];
+            
+            const randomNotif = {
+                id: 'AUTO-' + Date.now(),
+                type: types[Math.floor(Math.random() * types.length)],
+                category: categories[Math.floor(Math.random() * categories.length)],
+                title: 'Notification Automatique',
+                message: messages[Math.floor(Math.random() * messages.length)],
+                timestamp: new Date().toISOString(),
+                read: false,
+                archived: false,
+                priority: 'normal'
+            };
+            
+            notifications.unshift(randomNotif);
+            saveNotifications();
+            applyFilters();
+            
+            if (soundEnabled) {
+                playNotificationSound(randomNotif.type);
+            }
+        }
+
+        // Demander permission notifications
+        function requestNotificationPermission() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+
+        // Gestion des paramètres
+        function showNotificationSettings() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function saveNotificationSettings() {
+            autoCheck.showNotification('Paramètres Sauvegardés', 'Les paramètres ont été enregistrés', 'success');
+            closeSettingsModal();
+        }
+
+        function resetNotificationSettings() {
+            if (confirm('Réinitialiser tous les paramètres aux valeurs par défaut ?')) {
+                // Réinitialiser les toggles
+                document.getElementById('soundEnabled').checked = true;
+                document.getElementById('desktopEnabled').checked = true;
+                document.getElementById('autoRefresh').checked = true;
+                
+                soundEnabled = true;
+                desktopEnabled = true;
+                
+                startAutoRefresh();
+                autoCheck.showNotification('Paramètres Réinitialisés', 'Paramètres remis par défaut', 'success');
+            }
+        }
+
+        // Charger les préférences au démarrage
+        document.addEventListener('DOMContentLoaded', () => {
+            const soundPref = localStorage.getItem('notification_sound_enabled');
+            const desktopPref = localStorage.getItem('desktop_notifications_enabled');
+            const autoRefreshPref = localStorage.getItem('auto_refresh_enabled');
+            
+            if (soundPref !== null) {
+                soundEnabled = soundPref === 'true';
+                document.getElementById('soundEnabled').checked = soundEnabled;
+            }
+            
+            if (desktopPref !== null) {
+                desktopEnabled = desktopPref === 'true';
+                document.getElementById('desktopEnabled').checked = desktopEnabled;
+            }
+            
+            if (autoRefreshPref !== null) {
+                const enabled = autoRefreshPref === 'true';
+                document.getElementById('autoRefresh').checked = enabled;
+                if (!enabled) {
+                    stopAutoRefresh();
+                }
+            }
+        });
+
+        // Fermer modal en cliquant à l'extérieur
+        document.getElementById('settingsModal').addEventListener('click', (e) => {
+            if (e.target.id === 'settingsModal') {
+                closeSettingsModal();
+            }
+        });
+
+        // Nettoyage au déchargement
+        window.addEventListener('beforeunload', () => {
+            stopAutoRefresh();
+        });
+    </script>
+</body>
+</html>
