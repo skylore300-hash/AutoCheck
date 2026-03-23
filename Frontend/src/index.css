@@ -1,0 +1,109 @@
+@import url("https://fonts.googleapis.com/css2?family=Chivo:wght@400;600;700;800&family=Space+Grotesk:wght@400;500;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: "Space Grotesk", sans-serif;
+  --canvas: #fff5e8;
+  --paper: #fffdf9;
+  --stamp: #ffe4be;
+  --sun: #ffb95c;
+  --ink: #182033;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@layer utilities {
+  .bg-canvas {
+    background-color: var(--canvas);
+  }
+
+  .bg-paper {
+    background-color: var(--paper);
+  }
+
+  .bg-stamp {
+    background-color: var(--stamp);
+  }
+
+  .bg-sun {
+    background-color: var(--sun);
+  }
+
+  .text-ink {
+    color: var(--ink);
+  }
+
+  .border-ink\/10 {
+    border-color: rgb(24 32 51 / 0.1);
+  }
+
+  .border-ink\/8 {
+    border-color: rgb(24 32 51 / 0.08);
+  }
+
+  .border-ink\/15 {
+    border-color: rgb(24 32 51 / 0.15);
+  }
+
+  .border-ink\/20 {
+    border-color: rgb(24 32 51 / 0.2);
+  }
+
+  .border-ink\/40 {
+    border-color: rgb(24 32 51 / 0.4);
+  }
+
+  .font-display {
+    font-family: "Chivo", sans-serif;
+  }
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+.orb {
+  position: absolute;
+  width: 24rem;
+  height: 24rem;
+  filter: blur(70px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.orb-left {
+  top: -7rem;
+  left: -6rem;
+  background: #ff9760;
+}
+
+.orb-right {
+  bottom: -9rem;
+  right: -6rem;
+  background: #6ed9c5;
+}
+
+.fade-rise {
+  animation: fadeRise 520ms ease-out both;
+}
+
+.fade-rise-delayed {
+  animation: fadeRise 640ms ease-out both;
+}
+
+@keyframes fadeRise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
