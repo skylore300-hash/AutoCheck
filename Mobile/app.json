@@ -1,0 +1,11 @@
+{
+  "expo": {
+    "name": "AutoCheck Mobile",
+    "slug": "autocheck-mobile",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
