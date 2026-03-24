@@ -32,7 +32,7 @@ Aujourd’hui, au niveau local :
 •	Les données ne sont pas accessibles facilement
 4. Solution AutoCheck
 AutoCheck agit comme un outil de contrôle intelligent.
-🔍 Cas 1 : Vérification de véhicule
+ Cas 1 : Vérification de véhicule
 L’utilisateur entre :
 •	Numéro VIN ou plaque
 AutoCheck retourne :
@@ -40,7 +40,7 @@ AutoCheck retourne :
 •	Statut (volé ou non)
 •	Accidents
 •	Propriétaires précédents
-📄 Cas 2 : Vérification de documents
+ Cas 2 : Vérification de documents
 L’utilisateur :
 •	Upload un document (permis, carte grise…)
 AutoCheck :
